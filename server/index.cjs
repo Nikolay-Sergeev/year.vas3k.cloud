@@ -43,7 +43,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     if (url.pathname === '/healthz' && req.method === 'GET') {
       validate(JSON.parse(fs.readFileSync(file, 'utf8')));
-      return reply(res, 200, { status: 'ok', version: '1.4.5' });
+      return reply(res, 200, { status: 'ok', version: '1.4.6' });
     }
     if (url.pathname.startsWith('/theme/') && ['GET', 'HEAD'].includes(req.method)) {
       const target = path.resolve(publicDir, '.' + decodeURIComponent(url.pathname));

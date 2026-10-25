@@ -24,14 +24,14 @@
   --color-modal-backdrop: oklch(23% 0.018 260 / 0.32);
   --color-print-paper: oklch(99.8% 0.005 250);
   --color-print-ink: oklch(18% 0.005 250);
-  --color-day-red: oklch(88% 0.064 22);
+  --color-day-red: oklch(78% 0.12 25);
   --color-day-orange: oklch(91% 0.068 64);
   --color-day-green: oklch(89% 0.055 152);
   --color-day-blue: oklch(89% 0.048 251);
   --color-day-yellow: oklch(93% 0.076 96);
   --color-day-purple: oklch(89% 0.045 300);
   --color-day-teal: oklch(90% 0.047 193);
-  --color-day-pink: oklch(91% 0.045 350);
+  --color-day-pink: oklch(93% 0.065 345);
   --color-weekend: oklch(96% 0.008 250);
   --color-texture: oklch(67% 0.014 250);
   --texture-diagonal: repeating-linear-gradient(45deg, var(--color-transparent), var(--color-transparent) 4px, var(--color-texture) 4px, var(--color-texture) 5px);

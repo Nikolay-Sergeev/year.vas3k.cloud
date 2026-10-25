@@ -7,7 +7,8 @@
 /* Hallmark · dropped onMouseEnter={(e), onMouseLeave={(e) · Visual hover callbacks moved to CSS; all functional day painting and note editing callbacks remain. */
 /* Hallmark · dropped onKeyDown={(e) · The original note keyboard handler is still called after the added Enter and Space activation guard. */
 /* Hallmark · reworded "Ideas, bugs and feature requests — on GitHub." to "Ideas, bugs and feature requests on GitHub" · Gate 19 removes decorative punctuation from the existing GitHub link. */
-.App { min-height: 100dvh; }
+.calendar-page { min-height: 100dvh; display: flex; flex-direction: column; }
+.App { flex: 1; }
 .calendar-shell, .save-status { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
 .calendar-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-lg); padding-block: var(--space-xl) var(--space-lg); }
 .calendar-brand { font-weight: 500; font-size: var(--text-md); color: var(--color-muted); }
@@ -51,22 +52,29 @@
 .day-number:hover { background: var(--color-paper-3); }
 .custom-text { position: absolute; left: var(--space-xs); right: var(--space-xs); top: 26px; min-height: 32px; max-height: 34px; overflow: hidden; font-size: var(--text-xs); line-height: 1.35; font-weight: 500; text-align: left; text-overflow: ellipsis; cursor: text; overflow-wrap: break-word; }
 .custom-text.is-editing { z-index: var(--z-raised); top: var(--space-2xs); bottom: var(--space-2xs); max-height: none; padding: var(--space-2xs); overflow: auto; outline: 2px solid var(--color-focus); outline-offset: 0; }
-.calendar-data { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md) var(--space-lg); padding-block: var(--space-lg); }
-.data-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.calendar-settings { position: fixed; margin: auto; inset: 0; width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: var(--space-lg); border: 1px solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); color: var(--color-ink); overflow-y: auto; }
+.calendar-settings::backdrop { background: var(--color-modal-backdrop); }
+.settings-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.settings-header h2 { font-size: var(--text-xl); }
+.settings-header button { display: grid; place-items: center; width: 44px; min-height: 44px; padding: var(--space-xs); }
+.settings-header svg { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.settings-toggle, .calendar-settings button { -webkit-tap-highlight-color: var(--color-transparent); }
+.settings-toggle, .sign-out { min-height: 44px; padding-inline: var(--space-xs); }
+.data-actions { display: grid; gap: var(--space-xs); }
+.data-actions button { min-height: 44px; text-align: left; }
 .button-primary { background: var(--color-ink); color: var(--color-paper); border-color: var(--color-ink); }
 .button-primary:hover { background: var(--color-ink-2) !important; }
 .button-danger { color: var(--color-error); border-color: var(--color-transparent); }
 .button-danger:hover { background: var(--color-error-paper) !important; }
 .data-help { font-size: var(--text-sm); color: var(--color-muted); }
-.data-help summary { padding-block: var(--space-sm); cursor: pointer; }
+.data-help summary { min-height: 44px; padding-block: var(--space-sm); cursor: pointer; }
 .data-help p { margin-top: var(--space-sm); max-width: 65ch; }
-.source-link { margin-left: auto; font-size: var(--text-xs); }
+.source-link { display: inline-block; margin-top: var(--space-md); font-size: var(--text-xs); }
 .save-status { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); min-height: 72px; padding-block: var(--space-md); border-top: 1px solid var(--color-rule); color: var(--color-success); font-size: var(--text-sm); }
 .save-status-label { flex: 1; min-width: 0; }
 .save-status-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); }
 .save-status .sign-out { margin-left: auto; }
 .save-status-error { color: var(--color-error); }
-.save-status button { color: var(--color-ink); }
 @media (max-width: 65rem) { .calendar-classic { grid-template-columns: repeat(2, minmax(0, 1fr)); } .calendar-toolbar { justify-content: flex-start; } .source-link { margin-left: 0; } }
 @media (max-width: 40rem) {
   .calendar-header { align-items: flex-start; flex-direction: column; gap: var(--space-sm); padding-block: var(--space-lg) var(--space-sm); }
@@ -79,11 +87,15 @@
   .calendar-classic { grid-template-columns: minmax(0, 1fr); }
   .calendar-scroll-hint { display: block; margin-top: var(--space-2xs); }
   .calendar-instruction { margin-bottom: var(--space-md); }
-  .calendar-data { align-items: flex-start; flex-direction: column; }
-  .save-status { align-items: flex-start; flex-direction: column; }
-  .save-status-label { width: 100%; }
+  .save-status { gap: var(--space-xs); }
+  .save-status-label { flex: 1 1 96px; }
+  .save-status-actions { margin-left: auto; }
+}
+@media screen and (max-width: 767px) {
+  .calendar-settings { inset: auto 0 0; margin: 0; width: 100%; max-width: none; border-radius: var(--radius-card) var(--radius-card) 0 0; padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom)); }
 }
 @media print {
+  .calendar-page { display: block; min-height: 0; }
   @page { size: A4 landscape; margin: 12mm; }
   html, body { background: var(--color-print-paper) !important; color: var(--color-print-ink); font-size: 9pt; }
   .no-print, .calendar-brand { display: none !important; }

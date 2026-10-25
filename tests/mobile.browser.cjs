@@ -62,12 +62,39 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await page.getByLabel('Month', { exact: true }).selectOption('0');
   assert.equal(await page.getByRole('button', { name: 'Previous month' }).isDisabled(), true);
 
+  // Moving backup controls must preserve the downloaded calendar and keep them hidden until requested.
+  for (const name of ['Export backup…', 'Import calendar', 'Clean All']) assert.equal(await page.getByRole('button', { name, exact: true }).isVisible(), false);
+  await page.getByRole('button', { name: 'Settings', exact: true }).tap();
+  const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
+  await settings.waitFor();
+  const downloadReady = page.waitForEvent('download');
+  await settings.getByRole('button', { name: 'Export backup…', exact: true }).click();
+  const backup = JSON.parse(fs.readFileSync(await (await downloadReady).path(), 'utf8'));
+  delete backup.exportDate; delete backup.version;
+  assert.deepEqual(backup, seed, 'Settings export changed the calendar format or data');
+  const chooserReady = page.waitForEvent('filechooser');
+  await settings.getByRole('button', { name: 'Import calendar', exact: true }).click();
+  assert.equal((await chooserReady).isMultiple(), false);
+  page.once('dialog', dialog => void dialog.dismiss());
+  await settings.getByRole('button', { name: 'Clean All', exact: true }).click();
+  await settings.getByText('Saving and backups', { exact: true }).click();
+  await settings.getByText('Changes save automatically on Nikolai Server. The status below confirms each save.', { exact: true }).waitFor();
+  await page.keyboard.press('Escape');
+  await settings.waitFor({ state: 'detached' });
+  assert.equal(await page.getByRole('button', { name: 'Settings', exact: true }).evaluate(button => button === document.activeElement), true, 'Closing Settings did not restore keyboard focus');
+  assert.equal(writes, 0, 'Opening Settings, exporting, or cancelling Clean All changed data');
+  assert.deepEqual(stored(), seed);
+
+
   for (const width of [320, 375, 390, 430, 767]) {
     await page.setViewportSize({ width, height: 740 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Page overflow at ${width}px`);
     const bounds = await page.locator('.mobile-day').evaluateAll(days => days.map(day => { const box = day.getBoundingClientRect(); return { left: box.left, right: box.right, width: box.width, height: box.height }; }));
     assert.equal(bounds.length, 31);
     assert.ok(bounds.every(box => box.width >= 44 && box.height >= 44 && box.left >= 0 && box.right <= width + 1), `Day target or clipping at ${width}px`);
+    const settingsButton = await page.getByRole('button', { name: 'Settings', exact: true }).boundingBox();
+    const signOut = await page.getByRole('button', { name: 'Sign out', exact: true }).boundingBox();
+    assert.ok(Math.abs(settingsButton.y - signOut.y) < 1 && signOut.y + signOut.height <= 740, `Settings and Sign out do not fit together at ${width}px`);
   }
   await page.setViewportSize({ width: 390, height: 740 });
   const touch = await context.newCDPSession(page);

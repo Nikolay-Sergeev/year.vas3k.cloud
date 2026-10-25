@@ -3,7 +3,6 @@ import { flushSync } from "react-dom"
 import { useCalendar } from "../contexts/CalendarContext"
 import CalendarTitle from "./CalendarTitle"
 import ColorPicker from "./ColorPicker"
-import SaveLoadData from "./SaveLoadData"
 import ClassicView from "./views/ClassicView"
 import ColumnView from "./views/ColumnView"
 import LinearView from "./views/LinearView"
@@ -76,9 +75,6 @@ const Calendar: React.FC = () => {
             selectedColorTexture={selectedColorTexture}
           />
         ))}
-      </div>
-      <div className="no-print">
-        <SaveLoadData />
       </div>
     </main>
   )

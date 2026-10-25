@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react"
 import { ALL_COLOR_TEXTURE_CODES, COLORS, TEXTURES, ColorTextureCode, DateCellData } from "../utils/colors"
 
+import SaveLoadData from "../components/SaveLoadData"
+
 type CalendarView = "Linear" | "Classic" | "Column"
-interface StoredData {
+export interface StoredData {
   selectedYear: number
   dateCells: Record<string, DateCellData>
   selectedColorTexture: ColorTextureCode
@@ -175,15 +177,17 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     importData: loaded => update(parseData(loaded)),
   }
   return <CalendarContext.Provider value={value}>
+    <div className="calendar-page">
     {ready && children}
-    <footer className={`save-status no-print${error ? " save-status-error" : ""}`} role="status" aria-live="polite">
-      <span className="save-status-label">{status}</span>
+    <footer className={`save-status no-print${error ? " save-status-error" : ""}`} >
+      <span className="save-status-label" role="status" aria-live="polite">{status}</span>
       <div className="save-status-actions">
       {sessionExpired && <button onClick={() => window.location.assign("/login")}>Sign in</button>}{" "}
       {ready && error && !conflict && <button onClick={() => void save()}>Retry save</button>}{" "}
       {ready && (error || conflict) && <button onClick={exportDraft}>Export draft</button>}{" "}
       {(conflict || !ready) && <button onClick={() => { if (!dirty.current || window.confirm("Export your draft first. Reload the server calendar now?")) window.location.reload() }}>Reload server calendar</button>}
       {ready && hasDraft && !dirty.current && <button onClick={restoreDraft}>Restore unsaved draft</button>}
+      {ready && <SaveLoadData data={data} onImport={value.importData} />}
       {ready && !sessionExpired && <button className="sign-out" onClick={async () => {
         if (dirty.current && !window.confirm("Your draft will stay in this browser. Sign out with unsaved changes?")) return
         try {
@@ -194,6 +198,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }}>Sign out</button>}
       </div>
     </footer>
+    </div>
   </CalendarContext.Provider>
 }
 export const useCalendar = (): CalendarContextType => {

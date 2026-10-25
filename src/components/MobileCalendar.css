@@ -66,6 +66,5 @@
   .calendar-title-prefix { display: none; }
   .calendar-title { gap: 0; }
   .mobile-period .year-select { width: 76px; min-height: 44px; padding: 0 var(--space-2xs); border: 0; background-color: var(--color-transparent); font-family: var(--font-body); font-size: var(--text-lg); font-weight: 500; }
-  .calendar-data { padding-block: var(--space-xl) var(--space-lg); }
 }
 @media print { .mobile-planner, .mobile-day-editor { display: none !important; } .desktop-calendar { display: block !important; } }

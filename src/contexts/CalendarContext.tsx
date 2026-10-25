@@ -1,141 +1,184 @@
-import React, { createContext, useContext, useEffect, useState } from "react"
-import { ColorTextureCode, DateCellData } from "../utils/colors"
+import React, { createContext, useContext, useEffect, useRef, useState } from "react"
+import { ALL_COLOR_TEXTURE_CODES, COLORS, TEXTURES, ColorTextureCode, DateCellData } from "../utils/colors"
 
 type CalendarView = "Linear" | "Classic" | "Column"
-
-interface CalendarContextType {
-  selectedYear: number
-  setSelectedYear: (year: number) => void
-  dateCells: Map<string, DateCellData>
-  setDateCells: (dateCells: Map<string, DateCellData>) => void
-  selectedColorTexture: ColorTextureCode
-  setSelectedColorTexture: (colorTexture: ColorTextureCode) => void
-  selectedView: CalendarView
-  setSelectedView: (view: CalendarView) => void
-}
-
-const CalendarContext = createContext<CalendarContextType | undefined>(undefined)
-
-interface CalendarProviderProps {
-  children: React.ReactNode
-}
-
-const STORAGE_KEY = "calendar_data"
-
 interface StoredData {
   selectedYear: number
   dateCells: Record<string, DateCellData>
   selectedColorTexture: ColorTextureCode
   selectedView: CalendarView
-  version?: string
 }
+interface CalendarContextType {
+  selectedYear: number
+  setSelectedYear: (year: number) => void
+  dateCells: Map<string, DateCellData>
+  setDateCells: (cells: Map<string, DateCellData>) => void
+  selectedColorTexture: ColorTextureCode
+  setSelectedColorTexture: (color: ColorTextureCode) => void
+  selectedView: CalendarView
+  setSelectedView: (view: CalendarView) => void
+  importData: (data: unknown) => void
+}
+const CalendarContext = createContext<CalendarContextType | undefined>(undefined)
+const DRAFT_KEY = "nikolai_calendar_unsaved_draft"
+const empty: StoredData = { selectedYear: new Date().getFullYear(), dateCells: {}, selectedColorTexture: "red", selectedView: "Linear" }
+function parseData(value: unknown): StoredData {
+  const data = value as StoredData
+  if (!data || !Number.isInteger(data.selectedYear) || data.selectedYear < 1900 || data.selectedYear > 2200 ||
+      !data.dateCells || typeof data.dateCells !== "object" || Array.isArray(data.dateCells) ||
+      !ALL_COLOR_TEXTURE_CODES.includes(data.selectedColorTexture) || !["Linear", "Classic", "Column"].includes(data.selectedView)) {
+    throw new Error("Invalid calendar file")
+  }
+  if (Object.keys(data.dateCells).length > 30000) throw new Error("Too many calendar entries")
+  for (const [key, cell] of Object.entries(data.dateCells)) {
+    const parts = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(key)
+    if (!parts || !cell || typeof cell !== "object" || Array.isArray(cell)) throw new Error("Invalid calendar entry")
+    const [year, month, day] = parts.slice(1).map(Number)
+    const date = new Date(Date.UTC(year, month, day))
+    if (year < 1900 || year > 2200 || date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day ||
+        (cell.color !== undefined && !Object.prototype.hasOwnProperty.call(COLORS, cell.color)) ||
+        (cell.texture !== undefined && !Object.prototype.hasOwnProperty.call(TEXTURES, cell.texture)) ||
+        (cell.customText !== undefined && (typeof cell.customText !== "string" || cell.customText.length > 10000)) ||
+        Object.keys(cell).some(k => !["color", "texture", "customText"].includes(k))) throw new Error("Invalid calendar entry")
+  }
+  return { selectedYear: data.selectedYear, dateCells: data.dateCells, selectedColorTexture: data.selectedColorTexture, selectedView: data.selectedView }
+}
+const request = (init: RequestInit = {}) => fetch("/api/calendar", { credentials: "same-origin", cache: "no-store", ...init, signal: AbortSignal.timeout(15000) })
 
-export const CalendarProvider: React.FC<CalendarProviderProps> = ({ children }) => {
-  const currentYear = new Date().getFullYear()
+export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [data, setData] = useState<StoredData>(empty)
+  const [ready, setReady] = useState(false)
+  const [status, setStatus] = useState("Loading calendar…")
+  const [error, setError] = useState(false)
+  const [conflict, setConflict] = useState(false)
+  const current = useRef(empty)
+  const tag = useRef("")
+  const dirty = useRef(false)
+  const saving = useRef(false)
+  const blocked = useRef(false)
+  const generation = useRef(0)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const [hasDraft, setHasDraft] = useState(() => { try { return !!localStorage.getItem(DRAFT_KEY) } catch { return false } })
 
-  const [selectedYear, setSelectedYearState] = useState(currentYear)
-  const [dateCells, setDateCellsState] = useState<Map<string, DateCellData>>(new Map())
-  const [selectedColorTexture, setSelectedColorTextureState] = useState<ColorTextureCode>("red")
-  const [selectedView, setSelectedViewState] = useState<CalendarView>("Linear")
+  const cacheDraft = (value: StoredData) => {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(value)) } catch { /* Export remains available. */ }
+  }
+  const save = async () => {
+    if (!dirty.current || saving.current || blocked.current || !tag.current) return
+    saving.current = true
+    const sent = generation.current
+    setStatus("Saving…")
+    try {
+      const response = await request({ method: "PUT", headers: { "Content-Type": "application/json", "If-Match": tag.current }, body: JSON.stringify(current.current) })
+      if (response.status === 412) {
+        blocked.current = true
+        setConflict(true)
+        throw new Error("Another device saved changes. Export your draft, then reload the server calendar.")
+      }
+      if (!response.ok) throw new Error(response.status === 401 ? "Sign in again, then retry saving." : "Could not save. Your draft is kept in this browser; retry when connected.")
+      tag.current = response.headers.get("ETag") || ""
+      if (!tag.current) throw new Error("Server did not confirm the saved version. Retry saving.")
+      if (generation.current === sent) {
+        dirty.current = false
+        try { localStorage.removeItem(DRAFT_KEY) } catch { /* No data loss. */ }
+        setHasDraft(false)
+        setStatus("Saved on server")
+      }
+      setError(false)
+    } catch (err) {
+      setError(true)
+      setStatus(err instanceof Error ? err.message : "Could not save. Retry when connected.")
+    } finally {
+      saving.current = false
+      if (dirty.current && generation.current !== sent && !blocked.current) timer.current = setTimeout(save, 500)
+    }
+  }
+  const update = (patch: Partial<StoredData>) => {
+    current.current = { ...current.current, ...patch }
+    generation.current++
+    dirty.current = true
+    cacheDraft(current.current)
+    setData(current.current)
+    setStatus(blocked.current ? "Conflict: export your draft before reloading." : "Unsaved changes…")
+    clearTimeout(timer.current)
+    timer.current = setTimeout(save, 500)
+  }
 
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem(STORAGE_KEY)
-      if (storedData) {
-        const parsedData: StoredData = JSON.parse(storedData)
-
-        if (
-          parsedData.selectedYear &&
-          parsedData.selectedYear >= currentYear - 1 &&
-          parsedData.selectedYear <= currentYear + 5
-        ) {
-          setSelectedYearState(parsedData.selectedYear)
-        }
-
-        if (parsedData.dateCells) {
-          const dateCellsMap = new Map(Object.entries(parsedData.dateCells))
-          setDateCellsState(dateCellsMap)
-        }
-
-        if (parsedData.selectedColorTexture) {
-          setSelectedColorTextureState(parsedData.selectedColorTexture)
-        }
-
-        if (parsedData.selectedView && ["Linear", "Classic", "Column"].includes(parsedData.selectedView)) {
-          setSelectedViewState(parsedData.selectedView)
-        }
+    let active = true
+    const refresh = async () => {
+      if (dirty.current || saving.current || blocked.current) return
+      const started = generation.current
+      try {
+        const response = await request()
+        if (!response.ok) throw new Error("Could not load calendar. Reload to sign in or reconnect.")
+        const loaded = parseData(await response.json())
+        const revision = response.headers.get("ETag")
+        if (!revision) throw new Error("Server version is missing. Reload to try again.")
+        if (!active || dirty.current || generation.current !== started) return
+        tag.current = revision
+        current.current = loaded
+        setData(loaded)
+        setReady(true)
+        setStatus("Saved on server")
+        setError(false)
+      } catch (err) {
+        if (active) { setError(true); setStatus(err instanceof Error ? err.message : "Connection failed. Reconnect and retry.") }
       }
-    } catch (error) {
-      console.error("Error loading calendar data from localStorage:", error)
     }
-  }, [currentYear])
+    void refresh()
+    const interval = setInterval(refresh, 15000)
+    window.addEventListener("focus", refresh)
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (dirty.current) { cacheDraft(current.current); event.preventDefault(); event.returnValue = "" }
+    }
+    window.addEventListener("beforeunload", beforeUnload)
+    return () => {
+      active = false
+      clearInterval(interval)
+      clearTimeout(timer.current)
+      window.removeEventListener("focus", refresh)
+      window.removeEventListener("beforeunload", beforeUnload)
+    }
+  }, [])
 
-  const saveToLocalStorage = (data: StoredData) => {
+  const exportDraft = () => {
+    const blob = new Blob([JSON.stringify(current.current, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "calendar-unsaved-draft.json"
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+  const restoreDraft = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    } catch (error) {
-      console.error("Error saving calendar data to localStorage:", error)
-    }
+      const draft = localStorage.getItem(DRAFT_KEY)
+      if (draft && window.confirm("Restore this browser’s unsaved draft over the displayed server calendar?")) update(parseData(JSON.parse(draft)))
+    } catch { setError(true); setStatus("The saved draft could not be read. Import a JSON backup instead.") }
   }
-
-  const setSelectedYear = (year: number) => {
-    setSelectedYearState(year)
-    saveToLocalStorage({
-      selectedYear: year,
-      dateCells: Object.fromEntries(dateCells),
-      selectedColorTexture,
-      selectedView,
-    })
-  }
-
-  const setDateCells = (newDateCells: Map<string, DateCellData>) => {
-    setDateCellsState(newDateCells)
-    saveToLocalStorage({
-      selectedYear,
-      dateCells: Object.fromEntries(newDateCells),
-      selectedColorTexture,
-      selectedView,
-    })
-  }
-
-  const setSelectedColorTexture = (colorTexture: ColorTextureCode) => {
-    setSelectedColorTextureState(colorTexture)
-    saveToLocalStorage({
-      selectedYear,
-      dateCells: Object.fromEntries(dateCells),
-      selectedColorTexture: colorTexture,
-      selectedView,
-    })
-  }
-
-  const setSelectedView = (view: CalendarView) => {
-    setSelectedViewState(view)
-    saveToLocalStorage({
-      selectedYear,
-      dateCells: Object.fromEntries(dateCells),
-      selectedColorTexture,
-      selectedView: view,
-    })
-  }
-
   const value: CalendarContextType = {
-    selectedYear,
-    setSelectedYear,
-    dateCells,
-    setDateCells,
-    selectedColorTexture,
-    setSelectedColorTexture,
-    selectedView,
-    setSelectedView,
+    ...data,
+    dateCells: new Map(Object.entries(data.dateCells)),
+    setSelectedYear: year => update({ selectedYear: year }),
+    setDateCells: cells => update({ dateCells: Object.fromEntries(cells) }),
+    setSelectedColorTexture: color => update({ selectedColorTexture: color }),
+    setSelectedView: view => update({ selectedView: view }),
+    importData: loaded => update(parseData(loaded)),
   }
-
-  return <CalendarContext.Provider value={value}>{children}</CalendarContext.Provider>
+  return <CalendarContext.Provider value={value}>
+    <div className="no-print" role="status" aria-live="polite" style={{ padding: "12px 20px", textAlign: "center", background: error ? "#fff0e6" : "#eef6ef", color: "#243b2a" }}>
+      {status}{" "}
+      {ready && error && !conflict && <button onClick={() => void save()}>Retry save</button>}{" "}
+      {ready && (error || conflict) && <button onClick={exportDraft}>Export draft</button>}{" "}
+      {(conflict || !ready) && <button onClick={() => { if (!dirty.current || window.confirm("Export your draft first. Reload the server calendar now?")) window.location.reload() }}>Reload server calendar</button>}
+      {ready && hasDraft && !dirty.current && <button onClick={restoreDraft}>Restore unsaved draft</button>}
+    </div>
+    {ready && children}
+  </CalendarContext.Provider>
 }
-
 export const useCalendar = (): CalendarContextType => {
   const context = useContext(CalendarContext)
-  if (context === undefined) {
-    throw new Error("useCalendar must be used within a CalendarProvider")
-  }
+  if (!context) throw new Error("useCalendar must be used within a CalendarProvider")
   return context
 }

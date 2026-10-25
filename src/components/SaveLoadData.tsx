@@ -8,10 +8,7 @@ const SaveLoadData: React.FC = () => {
     dateCells,
     selectedColorTexture,
     selectedView,
-    setDateCells,
-    setSelectedYear,
-    setSelectedColorTexture,
-    setSelectedView,
+    importData,
   } = useCalendar()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -59,50 +56,7 @@ const SaveLoadData: React.FC = () => {
           return
         }
 
-        if (loadedData.dateCells && typeof loadedData.dateCells === "object") {
-          const newDateCells = new Map(dateCells)
-
-          Object.entries(loadedData.dateCells).forEach(([dateKey, cellData]) => {
-            const existing = newDateCells.get(dateKey) || {}
-            newDateCells.set(dateKey, {
-              ...existing,
-              ...(cellData as any),
-            })
-          })
-          setDateCells(newDateCells)
-        }
-
-        if (loadedData.selectedYear && typeof loadedData.selectedYear === "number") {
-          setSelectedYear(loadedData.selectedYear)
-        }
-        if (loadedData.selectedColorTexture && typeof loadedData.selectedColorTexture === "string") {
-          setSelectedColorTexture(loadedData.selectedColorTexture)
-        }
-        if (loadedData.selectedView && ["Linear", "Classic", "Column"].includes(loadedData.selectedView)) {
-          setSelectedView(loadedData.selectedView)
-        }
-
-        const mergedDateCells = loadedData.dateCells
-          ? (() => {
-              const newDateCells = new Map(dateCells)
-              Object.entries(loadedData.dateCells).forEach(([dateKey, cellData]) => {
-                const existing = newDateCells.get(dateKey) || {}
-                newDateCells.set(dateKey, {
-                  ...existing,
-                  ...(cellData as any),
-                })
-              })
-              return Object.fromEntries(newDateCells)
-            })()
-          : Object.fromEntries(dateCells)
-
-        const dataToSave = {
-          selectedYear: loadedData.selectedYear || selectedYear,
-          dateCells: mergedDateCells,
-          selectedColorTexture: loadedData.selectedColorTexture || selectedColorTexture,
-          selectedView: loadedData.selectedView || selectedView,
-        }
-        localStorage.setItem("calendar_data", JSON.stringify(dataToSave))
+        importData(loadedData)
       } catch (error) {
         alert("Error loading data: Invalid JSON format")
         console.error("Error parsing loaded data:", error)
@@ -114,13 +68,8 @@ const SaveLoadData: React.FC = () => {
   }
 
   const handleCleanAll = () => {
-    if (window.confirm("Are you sure you want to delete all data? This action cannot be undone.")) {
-      setDateCells(new Map())
-      setSelectedYear(new Date().getFullYear())
-      setSelectedColorTexture("red")
-      setSelectedView("Linear")
-
-      localStorage.removeItem("calendar_data")
+    if (window.confirm("Are you sure you want to delete all data? The server keeps a backup before saving.")) {
+      importData({ selectedYear: new Date().getFullYear(), dateCells: {}, selectedColorTexture: "red", selectedView: "Linear" })
     }
   }
 
@@ -158,7 +107,7 @@ const SaveLoadData: React.FC = () => {
             e.currentTarget.style.backgroundColor = UI_COLORS.button.primary.normal
           }}
         >
-          Save Data...
+          Export backup…
         </button>
 
         <button
@@ -182,7 +131,7 @@ const SaveLoadData: React.FC = () => {
             e.currentTarget.style.backgroundColor = UI_COLORS.button.success.normal
           }}
         >
-          Load Data
+          Import calendar
         </button>
 
         <button
@@ -222,15 +171,14 @@ const SaveLoadData: React.FC = () => {
         }}
       >
         <p style={{ fontSize: "16px" }}>
-          All changes on this page are saved locally in your browser. This page doesn't use any servers and works
-          offline.
+          Changes are saved automatically on Nikolai Server. The status at the top confirms when your changes are saved.
         </p>
         <p style={{ fontSize: "13px", paddingTop: "20px" }}>
-          However, some browsers may occasionally delete your local storage to "save space", so we strongly recommend
-          saving them to your hard drive using the buttons above.
+          The server keeps the previous 100 versions. You can also export a JSON backup or import an existing calendar.
+          Import replaces the current calendar; unsaved changes stay in this browser if the connection fails.
         </p>
         <p style={{ fontSize: "13px", paddingBottom: "100px" }}>
-          Ideas, bugs and feature requests — <a href="https://github.com/vas3k/year.vas3k.cloud">on GitHub</a>.
+          Ideas, bugs and feature requests — <a href="https://github.com/Nikolay-Sergeev/year.vas3k.cloud">on GitHub</a>.
         </p>
       </div>
     </>

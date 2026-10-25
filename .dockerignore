@@ -1,0 +1,12 @@
+.git
+node_modules
+build
+data
+secrets
+backups
+edge.candidate
+deployment.json
+*.test.cjs
+
+__pycache__
+*.pyc

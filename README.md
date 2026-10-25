@@ -1,46 +1,53 @@
-# My Year Planner (opinionated)
+# Nikolai Calendar
 
-A simple one-pager app to plan your year. It’s an opinionated planner I’ve been using for years for my own quirky needs, but maybe you’ll find it useful too.
+A LAN-hosted fork of [vas3k/year.vas3k.cloud](https://github.com/vas3k/year.vas3k.cloud), retaining its year planner, colors, textures, notes, three views, printing, and JSON export/import.
 
-**The idea is simple:** it's a digital imitation of a wall calendar. You can paint days in different colors, add emojis and textures, write any text on them, and shape the year your way. That's basically it. Use it however you want and don't forget to save your data.
+Open **https://calendar.nikolai-server.lan/** and enter the configured username/password in the browser’s sign-in prompt. HTTPS uses the existing server’s internal Caddy CA. Devices must trust that CA, as with the other LAN services.
 
-It all works locally in your browser, no server or cloud involved. 100% private and offline.
+## Saving and multiple devices
 
-Ideas, bugfixes and PRs are welcome. Open [issues](https://github.com/vas3k/year.vas3k.cloud/issues) to discuss.
+The server is the source of truth. The app loads the saved calendar before enabling editing and automatically saves changes after 500 ms. “Saved on server” confirms a successful disk write. Other open devices refresh every 15 seconds and on window focus while they have no unsaved edits.
 
-> 😎 **Demo:** download [demo.json](./examples/demo.json), open [year.vas3k.cloud](https://year.vas3k.cloud), scroll down, click "Load Data" and select this file
+Every save includes the revision it was based on. If another device saved first, the app keeps your draft and asks you to export it before reloading; it cannot silently overwrite the newer calendar. Failed saves retain a recovery draft in this browser and provide retry/export controls. A recovered draft requires explicit confirmation before replacing the displayed server calendar.
 
-<https://github.com/user-attachments/assets/89565584-4bc5-451c-82ad-aa13f80e6d8e>
+Import replaces the whole calendar, including all years and view settings. Export downloads a JSON file compatible with the original planner. Date keys retain the upstream **zero-based month** convention. Do not adjust dates during migration.
 
-![](./docs/screen1.jpeg)
+## Storage and authentication
 
-![](./docs/screen2.jpeg)
+- `/home/nikolai/calendar/data/calendar.json`: live calendar, outside the image.
+- `data/backups/`: previous 100 changed versions, captured before atomic replacement. These protect against accidental edits; copy `data/` to separate storage for disaster recovery.
+- `data/import-2026-10-25.json`: original imported document, preserved separately.
+- `secrets/auth.json`: username and salted scrypt password hash, mounted read-only. No plaintext password is stored on the server.
+- Authentication covers the app, static assets, and calendar API. `/healthz` exposes only health/version. HTTP redirects to HTTPS. The app publishes no host ports; edge Caddy restricts access to private source addresses.
+- Runtime state, secrets, backups, and deployment receipts are excluded from Git and the Docker build context. No personal calendar data belongs in the public fork.
 
-![](./docs/screen3.jpeg)
+To rotate a password, use a private stdin input with `node server/create-auth.cjs nikolai`, write its output to `secrets/auth.json` with permissions `0600`, then recreate only the calendar service under the shared lock. Save the generated password separately.
 
-## Run it yourself
+## Build and verify
 
-```bash
-npm i
-npm run dev
+Requires Node 24 or newer:
+
+```sh
+npm ci
+npm test
+GENERATE_SOURCEMAP=false npm run build
 ```
 
-Then open <http://localhost:3000/>. Voilá!
+The Docker build pins its Node base image by digest. The runtime includes the built frontend and a Node standard-library HTTP server, with **no node_modules or npm application dependencies**. The inherited React Scripts toolchain is build-only and has legacy dependency audit findings; it is excluded from the runtime image. There is no GitHub Pages deployment for this server-backed fork.
 
-For production deployments use `npm run build`
+API tests start a real server against temporary files and exercise password protection, Unicode/multiple-year round trips, durable writes across restart, backups, stale revisions, lost-response retries, malformed requests, size limits, and cross-site writes.
 
-## Run in docker-compose
+## Deployment
 
-```yaml
-# docker-compose.yml
----
+Sources live at `/home/nikolai/calendar`. Create private `data/` and `secrets/` directories owned by UID 1000, import a valid calendar, and install the password hash before first startup. The server deliberately refuses to start with missing or invalid calendar data. Source updates must exclude `data`, `secrets`, and `backups`; never overwrite the live calendar during an application update.
 
-services:
-  app:
-    build:
-      context: https://github.com/vas3k/year.vas3k.cloud.git
-      dockerfile: Dockerfile
-    ports:
-      - "3000:80"
+```sh
+docker compose build
+python3 ops/deploy.py
 ```
 
+`ops/deploy.py` acquires `/tmp/double-tt-verification.lock` without blocking, snapshots existing container identities, backs up Caddy’s configuration, validates the candidate, starts only the calendar, and waits for health. It preserves the edge file’s bind-mounted inode and reloads Caddy. A reload failure restores the original configuration. `deployment.json` records health, image identity, and changes to unrelated containers. Docker builds occur before taking the deployment lock.
+
+OpenWrt has a dedicated `dhcp.nikolai_calendar` domain entry mapping `calendar.nikolai-server.lan` to `192.168.1.201`. No public DNS or WAN forwarding is required.
+
+To roll back the route, restore a saved `backups/<timestamp>/Caddyfile` into `/srv/home-server/caddy/Caddyfile` while preserving its inode, validate, and reload Caddy under the shared lock. Stop only `nikolai-calendar` if needed; retain its data and secrets. To restore data, stop only this calendar service, copy the chosen JSON backup over `data/calendar.json` with UID 1000 and mode `0600`, and restart it. Reload browsers after recovery.

@@ -1,0 +1,13 @@
+# BEGIN NIKOLAI CALENDAR
+https://calendar.nikolai-server.lan {
+    tls internal
+    route {
+        @outside_lan not remote_ip private_ranges
+        respond @outside_lan "Private network access is required." 403
+        reverse_proxy nikolai-calendar:8080
+    }
+}
+http://calendar.nikolai-server.lan {
+    redir https://calendar.nikolai-server.lan{uri} permanent
+}
+# END NIKOLAI CALENDAR

@@ -21,3 +21,14 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Private runtime state must never enter Git or the Docker build context.
+/data/
+/secrets/
+/backups/
+/edge.candidate
+/deployment.json
+*.credentials.txt
+
+__pycache__/
+*.pyc

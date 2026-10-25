@@ -49,10 +49,19 @@ const MobileCalendar: React.FC = () => {
   }, [isEditing])
 
   const changeMonth = (next: number) => {
-    setMonth(next)
-    setSelectedDay(defaultDay(selectedYear, next))
+    const target = new Date(selectedYear, next, 1)
+    const year = target.getFullYear()
+    const targetMonth = target.getMonth()
+    if (year < 1900 || year > 2200) return
+    if (year !== selectedYear) {
+      // Keep the requested month when the year changes, including without local storage.
+      previousYear.current = year
+      setSelectedYear(year)
+    }
+    setMonth(targetMonth)
+    setSelectedDay(defaultDay(year, targetMonth))
     setIsEditing(false)
-    try { localStorage.setItem(monthKey(selectedYear), String(next)) } catch { /* Optional preference. */ }
+    try { localStorage.setItem(monthKey(year), String(targetMonth)) } catch { /* Optional preference. */ }
   }
   const changeView = (next: MobileView) => {
     setView(next)
@@ -116,8 +125,8 @@ const MobileCalendar: React.FC = () => {
         <CalendarTitle />
       </div>
       <div className="mobile-month-arrows">
-        <button type="button" aria-label="Previous month" disabled={month === 0} onClick={() => changeMonth(month - 1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m12 5-5 5 5 5" /></svg></button>
-        <button type="button" aria-label="Next month" disabled={month === 11} onClick={() => changeMonth(month + 1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" /></svg></button>
+        <button type="button" aria-label="Previous month" disabled={selectedYear === 1900 && month === 0} onClick={() => changeMonth(month - 1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m12 5-5 5 5 5" /></svg></button>
+        <button type="button" aria-label="Next month" disabled={selectedYear === 2200 && month === 11} onClick={() => changeMonth(month + 1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" /></svg></button>
       </div>
     </div>
     <div className="mobile-calendar-tools">

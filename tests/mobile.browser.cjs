@@ -60,7 +60,6 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.locator('.mobile-month-grid').waitFor();
   await page.getByLabel('Month', { exact: true }).selectOption('0');
-  assert.equal(await page.getByRole('button', { name: 'Previous month' }).isDisabled(), true);
 
   // Moving backup controls must preserve the downloaded calendar and keep them hidden until requested.
   for (const name of ['Export backup…', 'Import calendar', 'Clean All']) assert.equal(await page.getByRole('button', { name, exact: true }).isVisible(), false);
@@ -189,8 +188,26 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await summary.getByRole('heading', { name: 'Thursday, 1 April', exact: true }).waitFor();
   assert.equal(await page.getByRole('dialog').count(), 0);
   await page.getByLabel('Month', { exact: true }).selectOption('11');
-  assert.equal(await page.getByRole('button', { name: 'Next month' }).isDisabled(), true);
+  assert.equal(await page.getByRole('button', { name: 'Next month' }).isDisabled(), false, 'December must allow navigation into January');
   assert.equal(writes, writesBeforeBrowsing, 'Date preview navigation wrote to the calendar');
+
+  await page.getByRole('button', { name: 'Next month' }).tap();
+  await page.getByRole('group', { name: 'January 2028', exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Calendar year', { exact: true }).inputValue(), '2028');
+  assert.equal(await page.locator('.mobile-day[data-date="2028-0-31"]').count(), 1);
+  await page.getByRole('button', { name: 'Previous month' }).tap();
+  await page.getByRole('group', { name: 'December 2027', exact: true }).waitFor();
+  await page.getByLabel('Month', { exact: true }).selectOption('0');
+  await page.getByRole('button', { name: 'Previous month' }).tap();
+  await page.getByRole('group', { name: 'December 2026', exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Calendar year', { exact: true }).inputValue(), '2026');
+  await page.getByRole('button', { name: 'Next month' }).tap();
+  await page.getByRole('group', { name: 'January 2027', exact: true }).waitFor();
+  await page.locator('.mobile-day[data-date="2027-0-1"]').tap();
+  await summary.getByText('New Year’s Day', { exact: true }).waitFor();
+  await until(async () => stored().selectedYear === 2027 && await page.locator('.save-status-label').innerText() === 'Saved on server', 'Year navigation did not finish saving');
+  assert.deepEqual(stored().dateCells, seed.dateCells, 'Crossing a year boundary changed calendar entries');
+
 
   const currentYear = new Date().getFullYear();
   const leapYear = Array.from({ length: 7 }, (_, index) => currentYear - 1 + index).find(year => new Date(year, 1, 29).getMonth() === 1);

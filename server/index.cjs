@@ -4,43 +4,22 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { validate } = require('./schema.cjs');
+const { createAuth } = require('./auth.cjs');
 
 const dataDir = process.env.DATA_DIR || '/data';
 const publicDir = path.resolve(process.env.PUBLIC_DIR || './build');
 const origin = process.env.APP_ORIGIN || 'https://calendar.nikolai-server.lan';
-const auth = JSON.parse(fs.readFileSync(process.env.AUTH_FILE || '/run/secrets/calendar_auth', 'utf8'));
-if (!auth.username || !/^[a-f0-9]{32}$/.test(auth.salt) || !/^[a-f0-9]{64}$/.test(auth.hash)) throw Error('Invalid authentication configuration');
 const file = path.join(dataDir, 'calendar.json');
 fs.mkdirSync(path.join(dataDir, 'backups'), { recursive: true, mode: 0o700 });
 // Refuse to start with missing/corrupt data. Import deliberately before first start.
 validate(JSON.parse(fs.readFileSync(file, 'utf8')));
-const failures = new Map();
+const auth = createAuth({ authFile: process.env.AUTH_FILE || '/run/secrets/calendar_auth', dataDir, origin });
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
 const etag = bytes => '"' + crypto.createHash('sha256').update(bytes).digest('hex') + '"';
 const reply = (res, status, body, headers = {}) => {
   res.writeHead(status, { 'Content-Type': 'application/json', ...headers });
   res.end(JSON.stringify(body));
 };
-function authorized(req, res) {
-  const ip = req.socket.remoteAddress;
-  const now = Date.now();
-  for (const [key, value] of failures) if (value.until <= now) failures.delete(key);
-  const failed = failures.get(ip) || { count: 0, until: now + 60000 };
-  if (failed.count >= 20) { reply(res, 429, { error: 'Too many login attempts. Try again in a minute.' }, { 'Retry-After': '60' }); return false; }
-  let valid = false;
-  const header = req.headers.authorization || '';
-  if (header.startsWith('Basic ') && header.length < 2048) {
-    const value = Buffer.from(header.slice(6), 'base64').toString('utf8');
-    const sep = value.indexOf(':');
-    const hash = crypto.scryptSync(value.slice(sep + 1), auth.salt, 32);
-    valid = sep > 0 && value.slice(0, sep) === auth.username && crypto.timingSafeEqual(hash, Buffer.from(auth.hash, 'hex'));
-  }
-  if (valid) { failures.delete(ip); return true; }
-  // Initial browser challenge isn't a failed password attempt.
-  if (header) { failed.count++; failures.set(ip, failed); }
-  reply(res, 401, { error: 'Authentication required' }, { 'WWW-Authenticate': 'Basic realm="Nikolai Calendar", charset="UTF-8"' });
-  return false;
-}
 function persist(bytes, previous) {
   const backup = path.join(dataDir, 'backups', `${Date.now()}-${crypto.randomUUID()}.json`);
   fs.writeFileSync(backup, previous, { mode: 0o600, flag: 'wx' });
@@ -64,9 +43,10 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     if (url.pathname === '/healthz' && req.method === 'GET') {
       validate(JSON.parse(fs.readFileSync(file, 'utf8')));
-      return reply(res, 200, { status: 'ok', version: '1.1.0' });
+      return reply(res, 200, { status: 'ok', version: '1.2.0' });
     }
-    if (!authorized(req, res)) return;
+    if (await auth.handle(req, res, url)) return;
+    if (!auth.requireAuthentication(req, res)) return;
     if (url.pathname === '/api/calendar') {
       if (req.method === 'GET') {
         const bytes = fs.readFileSync(file);

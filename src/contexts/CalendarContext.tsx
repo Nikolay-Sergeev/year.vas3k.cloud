@@ -51,6 +51,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [status, setStatus] = useState("Loading calendar…")
   const [error, setError] = useState(false)
   const [conflict, setConflict] = useState(false)
+  const [sessionExpired, setSessionExpired] = useState(false)
   const current = useRef(empty)
   const tag = useRef("")
   const dirty = useRef(false)
@@ -75,6 +76,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setConflict(true)
         throw new Error("Another device saved changes. Export your draft, then reload the server calendar.")
       }
+      if (response.status === 401) setSessionExpired(true)
       if (!response.ok) throw new Error(response.status === 401 ? "Sign in again, then retry saving." : "Could not save. Your draft is kept in this browser; retry when connected.")
       tag.current = response.headers.get("ETag") || ""
       if (!tag.current) throw new Error("Server did not confirm the saved version. Retry saving.")
@@ -111,7 +113,8 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const started = generation.current
       try {
         const response = await request()
-        if (!response.ok) throw new Error("Could not load calendar. Reload to sign in or reconnect.")
+        if (response.status === 401) setSessionExpired(true)
+        if (!response.ok) throw new Error("Could not load calendar. Sign in again or reconnect.")
         const loaded = parseData(await response.json())
         const revision = response.headers.get("ETag")
         if (!revision) throw new Error("Server version is missing. Reload to try again.")
@@ -120,6 +123,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         current.current = loaded
         setData(loaded)
         setReady(true)
+        setSessionExpired(false)
         setStatus("Saved on server")
         setError(false)
       } catch (err) {
@@ -167,14 +171,23 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     importData: loaded => update(parseData(loaded)),
   }
   return <CalendarContext.Provider value={value}>
-    <div className="no-print" role="status" aria-live="polite" style={{ padding: "12px 20px", textAlign: "center", background: error ? "#fff0e6" : "#eef6ef", color: "#243b2a" }}>
+    {ready && children}
+    <footer className="no-print" role="status" aria-live="polite" style={{ padding: "12px 20px", textAlign: "center", background: error ? "#fff0e6" : "#eef6ef", color: "#243b2a" }}>
       {status}{" "}
+      {sessionExpired && <button onClick={() => window.location.assign("/login")}>Sign in</button>}{" "}
       {ready && error && !conflict && <button onClick={() => void save()}>Retry save</button>}{" "}
       {ready && (error || conflict) && <button onClick={exportDraft}>Export draft</button>}{" "}
       {(conflict || !ready) && <button onClick={() => { if (!dirty.current || window.confirm("Export your draft first. Reload the server calendar now?")) window.location.reload() }}>Reload server calendar</button>}
       {ready && hasDraft && !dirty.current && <button onClick={restoreDraft}>Restore unsaved draft</button>}
-    </div>
-    {ready && children}
+      {ready && !sessionExpired && <button style={{ marginLeft: "12px" }} onClick={async () => {
+        if (dirty.current && !window.confirm("Your draft will stay in this browser. Sign out with unsaved changes?")) return
+        try {
+          const response = await fetch("/api/logout", { method: "POST", credentials: "same-origin", signal: AbortSignal.timeout(15000) })
+          if (!response.ok) throw new Error("Could not sign out. Try again.")
+          window.location.assign("/login")
+        } catch { setError(true); setStatus("Could not sign out. Check your connection and try again.") }
+      }}>Sign out</button>}
+    </footer>
   </CalendarContext.Provider>
 }
 export const useCalendar = (): CalendarContextType => {

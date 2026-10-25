@@ -23,8 +23,10 @@ test('authenticated calendar persists across restart and rejects lost updates an
   probe.listen(0, '127.0.0.1'); await once(probe,'listening');
   const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
   let child;
-  const start = async () => {
-    child = spawn(process.execPath, [path.join(__dirname, 'index.cjs')], { env: {...process.env, PORT:String(port), DATA_DIR:root, PUBLIC_DIR:path.join(root,'public'), AUTH_FILE:path.join(root,'auth.json')}, stdio:['ignore','ignore','pipe'] });
+  const start = async (ahead = 0) => {
+    const clock = path.join(root, 'clock.cjs');
+    fs.writeFileSync(clock, `const now=Date.now; Date.now=()=>now()+${ahead};`);
+    child = spawn(process.execPath, ['--require', clock, path.join(__dirname, 'index.cjs')], { env: {...process.env, PORT:String(port), DATA_DIR:root, PUBLIC_DIR:path.join(root,'public'), AUTH_FILE:path.join(root,'auth.json')}, stdio:['ignore','ignore','pipe'] });
     let errors=''; child.stderr.on('data',chunk=>{errors+=chunk});
     for (let i=0;i<80;i++) {
       try { if ((await fetch(`http://127.0.0.1:${port}/healthz`)).ok) return; } catch {}
@@ -35,17 +37,24 @@ test('authenticated calendar persists across restart and rejects lost updates an
   };
   const stop = async () => { const exited=once(child,'exit'); child.kill(); await exited; };
   t.after(async () => { if(child?.exitCode===null) await stop(); fs.rmSync(root,{recursive:true,force:true}); });
-  const headers = {Authorization: 'Basic '+Buffer.from('nikolai:'+password).toString('base64')};
-  const get = (route='/api/calendar', init={})=>fetch(`http://127.0.0.1:${port}${route}`,{...init,headers:{...headers,...init.headers}});
+  let cookie = '';
+  const login = (username='nikolai', suppliedPassword=password, extra={}) => fetch(`http://127.0.0.1:${port}/api/login`, {method:'POST',headers:{'Content-Type':'application/json',...extra},body:JSON.stringify({username,password:suppliedPassword})});
+  const get = (route='/api/calendar', init={})=>fetch(`http://127.0.0.1:${port}${route}`,{...init,headers:{Cookie:cookie,...init.headers}});
   const put = (body, tag, extra={})=>get('/api/calendar',{method:'PUT',headers:{'Content-Type':'application/json',...(tag?{'If-Match':tag}:{}),...extra},body:JSON.stringify(body)});
   await start();
-  await t.test('static content, calendar, and writes require the password',async()=>{
-    for(const route of ['/', '/api/calendar','/server/index.cjs','/data/calendar.json']) {
-      const response=await fetch(`http://127.0.0.1:${port}${route}`);assert.equal(response.status,401);assert.match(response.headers.get('www-authenticate'),/Basic/);
-    }
-    assert.equal((await get('/',{headers:{Authorization:'Basic '+Buffer.from('nikolai:wrong').toString('base64')}})).status,401);
+  await t.test('sign-in form and password protect the calendar without a browser auth prompt',async()=>{
+    const page=await fetch(`http://127.0.0.1:${port}/`,{redirect:'manual'});assert.equal(page.status,303);assert.equal(page.headers.get('location'),'/login');
+    const form=await fetch(`http://127.0.0.1:${port}/login`);assert.equal(form.status,200);assert.match(await form.text(),/autocomplete="current-password"/);
+    const denied=await fetch(`http://127.0.0.1:${port}/api/calendar`);assert.equal(denied.status,401);assert.equal(denied.headers.get('www-authenticate'),null);
+    assert.equal((await login('nikolai','wrong')).status,401);
+    assert.equal((await login('nikolai',password,{Origin:'https://evil.example'})).status,403);
+    const response=await login();assert.equal(response.status,200);
+    const setCookie=response.headers.get('set-cookie');
+    assert.match(setCookie,/Max-Age=2592000/);assert.match(setCookie,/HttpOnly/);assert.match(setCookie,/Secure/);assert.match(setCookie,/SameSite=Strict/);assert.match(setCookie,/Path=\//);
+    const expires=/Expires=([^;]+)/.exec(setCookie)[1];assert.ok(Math.abs(Date.parse(expires)-Date.now()-30*86400000)<2000);
+    cookie=setCookie.split(';')[0];
     assert.equal((await get('/')).status,200);
-    assert.equal((await get('/server/index.cjs')).status,404);
+    for(const route of ['/server/index.cjs','/data/calendar.json','/data/session-key']) assert.equal((await get(route)).status,404);
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/calendar`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(seed)})).status,401);
   });
   const first=await get();const initialTag=first.headers.get('etag');assert.deepEqual(await first.json(),seed);
@@ -70,4 +79,18 @@ test('authenticated calendar persists across restart and rejects lost updates an
     assert.equal((await put({...seed,large:'x'.repeat(2*1024*1024)},savedTag)).status,413);
     assert.deepEqual(await (await get()).json(),changed);
   });
+  await t.test('remembered session expires after 30 days, rejects tampering, and clears on sign out',async()=>{
+    assert.equal((await get('/api/calendar',{headers:{Cookie:cookie+'tampered'}})).status,401);
+    await stop();await start(29*86400000);assert.equal((await get()).status,200);
+    await stop();await start(30*86400000+1000);assert.equal((await get()).status,401);
+    await stop();await start();
+    assert.equal((await get('/api/logout',{method:'POST',headers:{Origin:'https://evil.example'}})).status,403);
+    const signedOut=await get('/api/logout',{method:'POST'});assert.equal(signedOut.status,200);
+    const cleared=signedOut.headers.get('set-cookie');assert.match(cleared,/Max-Age=0/);
+    assert.equal((await get('/api/calendar',{headers:{Cookie:cleared.split(';')[0]}})).status,401);
+    const changedSalt=crypto.randomBytes(16).toString('hex');
+    fs.writeFileSync(path.join(root,'auth.json'),JSON.stringify({username:'nikolai',salt:changedSalt,hash:crypto.scryptSync(password,changedSalt,32).toString('hex')}));
+    await stop();await start();assert.equal((await get()).status,401);assert.equal((await login()).status,200);
+  });
+
 });

@@ -171,7 +171,7 @@ const SaveLoadData: React.FC = () => {
         }}
       >
         <p style={{ fontSize: "16px" }}>
-          Changes are saved automatically on Nikolai Server. The status at the top confirms when your changes are saved.
+          Changes are saved automatically on Nikolai Server. The status at the bottom confirms when your changes are saved.
         </p>
         <p style={{ fontSize: "13px", paddingTop: "20px" }}>
           The server keeps the previous 100 versions. You can also export a JSON backup or import an existing calendar.

@@ -2,11 +2,11 @@
 
 A LAN-hosted fork of [vas3k/year.vas3k.cloud](https://github.com/vas3k/year.vas3k.cloud), retaining its year planner, colors, textures, notes, three views, printing, and JSON export/import.
 
-Open **https://calendar.nikolai-server.lan/** and enter the configured username/password in the browser’s sign-in prompt. HTTPS uses the existing server’s internal Caddy CA. Devices must trust that CA, as with the other LAN services.
+Open **https://calendar.nikolai-server.lan/** and enter your existing username/password on the sign-in page. This device stays signed in for 30 days, including after closing the browser. Use **Sign out** at the bottom to end this device’s session. HTTPS uses the existing server’s internal Caddy CA. Devices must trust that CA, as with the other LAN services.
 
 ## Saving and multiple devices
 
-The server is the source of truth. The app loads the saved calendar before enabling editing and automatically saves changes after 500 ms. “Saved on server” confirms a successful disk write. Other open devices refresh every 15 seconds and on window focus while they have no unsaved edits.
+The server is the source of truth. The app loads the saved calendar before enabling editing and automatically saves changes after 500 ms. “Saved on server” at the bottom of the page confirms a successful disk write. Other open devices refresh every 15 seconds and on window focus while they have no unsaved edits.
 
 Every save includes the revision it was based on. If another device saved first, the app keeps your draft and asks you to export it before reloading; it cannot silently overwrite the newer calendar. Failed saves retain a recovery draft in this browser and provide retry/export controls. A recovered draft requires explicit confirmation before replacing the displayed server calendar.
 
@@ -18,6 +18,7 @@ Import replaces the whole calendar, including all years and view settings. Expor
 - `data/backups/`: previous 100 changed versions, captured before atomic replacement. These protect against accidental edits; copy `data/` to separate storage for disaster recovery.
 - `data/import-2026-10-25.json`: original imported document, preserved separately.
 - `secrets/auth.json`: username and salted scrypt password hash, mounted read-only. No plaintext password is stored on the server.
+- `data/session-key`: private signing key that preserves remembered logins across server restarts. A signed cookie expires 30 days after sign-in and uses Secure, HttpOnly, and SameSite=Strict attributes. The password is never stored in browser storage. Rotating credentials invalidates existing sessions.
 - Authentication covers the app, static assets, and calendar API. `/healthz` exposes only health/version. HTTP redirects to HTTPS. The app publishes no host ports; edge Caddy restricts access to private source addresses.
 - Runtime state, secrets, backups, and deployment receipts are excluded from Git and the Docker build context. No personal calendar data belongs in the public fork.
 
@@ -35,7 +36,7 @@ GENERATE_SOURCEMAP=false npm run build
 
 The Docker build pins its Node base image by digest. The runtime includes the built frontend and a Node standard-library HTTP server, with **no node_modules or npm application dependencies**. The inherited React Scripts toolchain is build-only and has legacy dependency audit findings; it is excluded from the runtime image. There is no GitHub Pages deployment for this server-backed fork.
 
-API tests start a real server against temporary files and exercise password protection, Unicode/multiple-year round trips, durable writes across restart, backups, stale revisions, lost-response retries, malformed requests, size limits, and cross-site writes.
+API tests start a real server against temporary files and exercise password protection, 30-day session expiry, browser logout, credential rotation, Unicode/multiple-year round trips, durable writes across restart, backups, stale revisions, lost-response retries, malformed requests, size limits, and cross-site writes.
 
 ## Deployment
 

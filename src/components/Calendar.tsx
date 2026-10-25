@@ -40,10 +40,10 @@ const Calendar: React.FC = () => {
 
   return (
     <main className="calendar-shell">
-      <header className="calendar-header">
+      {(!isMobile || isPrinting) && <header className="calendar-header">
         <span className="calendar-brand">Nikolai Calendar</span>
         <CalendarTitle />
-      </header>
+      </header>}
       <div className="calendar-toolbar desktop-controls no-print">
         <ViewSelector selectedView={selectedView} onViewChange={setSelectedView} />
         <ColorPicker />

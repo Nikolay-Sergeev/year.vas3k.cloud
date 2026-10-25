@@ -16,7 +16,7 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calendar-mobile-'));
   const seed = {
     selectedYear: 2027, selectedView: 'Linear', selectedColorTexture: 'purple',
-    dateCells: { '2027-0-1': { color: 'green', customText: 'New Year’s Day' }, '2026-9-25': { color: 'pink', customText: 'Existing plan' } },
+    dateCells: { '2027-0-1': { color: 'green', customText: 'New Year’s Day' }, '2026-9-25': { color: 'pink', customText: 'Existing plan' }, '2027-4-31': { color: 'blue', customText: 'End of month review\n'.repeat(20) } },
   };
   const password = crypto.randomBytes(24).toString('base64url');
   const salt = crypto.randomBytes(16).toString('hex');
@@ -78,6 +78,7 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   assert.equal(await page.getByRole('dialog').count(), 0);
   assert.equal(await page.locator('.save-status-label').innerText(), 'Saved on server', 'Touch scrolling created an unsaved edit');
   assert.equal(writes, 0, 'Touch scrolling issued a calendar write');
+  assert.equal(await page.locator('.mobile-day[data-date="2027-0-1"]').getAttribute('aria-pressed'), 'true', 'Touch scrolling selected a different day');
   assert.deepEqual(stored(), seed);
 
   await page.getByLabel('Month', { exact: true }).selectOption('1');
@@ -91,7 +92,17 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   assert.deepEqual(stored(), seed);
   await page.getByRole('button', { name: 'Choose a date', exact: true }).click();
   await page.getByLabel('Month', { exact: true }).selectOption('0');
+  await page.locator('.mobile-day[data-date="2027-0-1"]').tap();
+  const summary = page.getByRole('region', { name: 'Selected day', exact: true });
+  await summary.getByText('New Year’s Day', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('dialog').count(), 0, 'Selecting a date blocked the month with an editor');
   await page.locator('.mobile-day[data-date="2027-0-2"]').tap();
+  await summary.getByText('No plans for this day.', { exact: true }).waitFor();
+  assert.equal(await page.locator('.mobile-day[data-date="2027-0-2"]').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('.mobile-day[data-date="2027-0-1"]').getAttribute('aria-pressed'), 'false');
+  assert.equal(writes, 0, 'Selecting a day changed its data');
+  assert.deepEqual(stored(), seed);
+  await summary.getByRole('button', { name: 'Edit selected day', exact: true }).tap();
   const editor = page.getByRole('dialog');
   await editor.waitFor();
   assert.equal(writes, 0, 'Opening a day changed its data');
@@ -107,6 +118,8 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await until(() => !stored().dateCells['2027-0-2']?.texture, 'Appearance was not cleared');
   assert.equal(stored().dateCells['2027-0-2'].customText, note);
   await editor.getByRole('button', { name: 'Done', exact: true }).tap();
+  await editor.waitFor({ state: 'detached' });
+  assert.equal(await summary.locator('.mobile-summary-note').innerText(), note, 'Saved note did not update below the month');
   await page.getByRole('button', { name: 'Agenda', exact: true }).click();
   await page.getByRole('button', { name: 'Edit Saturday, 2 January', exact: true }).waitFor();
   assert.equal(await page.locator('.mobile-agenda-note').filter({ hasText: 'Πλάνο / План' }).innerText(), note);
@@ -123,12 +136,47 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   assert.equal(stored().selectedView, 'Linear');
   assert.equal(stored().selectedColorTexture, 'purple');
 
+  // Even six-week months leave the selected date and preview on screen together.
+  await page.setViewportSize({ width: 320, height: 667 });
+  await page.getByRole('button', { name: 'Month', exact: true }).click();
+  await page.getByLabel('Month', { exact: true }).selectOption('4');
+  await page.locator('.mobile-day[data-date="2027-4-31"]').tap();
+  await summary.getByRole('heading', { name: 'Monday, 31 May', exact: true }).waitFor();
+  const grid = await page.locator('.mobile-month-grid').boundingBox();
+  const preview = await summary.boundingBox();
+  assert.equal(await summary.locator('.mobile-summary-note').textContent(), seed.dateCells['2027-4-31'].customText);
+  assert.ok(await summary.locator('.mobile-summary-note').evaluate(element => element.scrollHeight > element.clientHeight), 'Long note cannot scroll inside the small preview');
+  assert.ok(grid.y >= 0 && grid.y + grid.height <= preview.y && preview.y + preview.height <= 667, 'Six-week month and day preview do not fit together');
+  await summary.locator('.mobile-summary-note').scrollIntoViewIfNeeded();
+  const noteBox = await summary.locator('.mobile-summary-note').boundingBox();
+  const noteTouch = { x: noteBox.x + noteBox.width / 2, y: noteBox.y + noteBox.height - 12 };
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [noteTouch] });
+  for (let step = 1; step <= 8; step++) {
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: noteTouch.x, y: noteTouch.y - step * 8 }] });
+    await new Promise(resolve => setTimeout(resolve, 16)); // A swipe spans rendered frames.
+  }
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await until(async () => await summary.locator('.mobile-summary-note').evaluate(element => element.scrollTop > 0), 'Long note cannot be read by touch scrolling the preview');
+  const writesBeforeBrowsing = writes;
+  await page.getByRole('button', { name: 'Previous month' }).click();
+  await summary.getByRole('heading', { name: 'Thursday, 1 April', exact: true }).waitFor();
+  assert.equal(await page.getByRole('dialog').count(), 0);
+  await page.getByLabel('Month', { exact: true }).selectOption('11');
+  assert.equal(await page.getByRole('button', { name: 'Next month' }).isDisabled(), true);
+  assert.equal(writes, writesBeforeBrowsing, 'Date preview navigation wrote to the calendar');
+
   const currentYear = new Date().getFullYear();
   const leapYear = Array.from({ length: 7 }, (_, index) => currentYear - 1 + index).find(year => new Date(year, 1, 29).getMonth() === 1);
   await page.getByLabel('Calendar year', { exact: true }).selectOption(String(leapYear));
   await page.getByRole('button', { name: 'Month', exact: true }).click();
   await page.getByLabel('Month', { exact: true }).selectOption('1');
   assert.equal(await page.locator('.mobile-day').count(), 29, 'Leap-year February is incomplete');
+  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  const today = new Date();
+  await until(async () => await page.getByLabel('Calendar year', { exact: true }).inputValue() === String(today.getFullYear()), 'Today did not restore the current year');
+  assert.equal(await page.getByLabel('Month', { exact: true }).inputValue(), String(today.getMonth()));
+  assert.equal(await page.locator(`.mobile-day[data-date="${today.getFullYear()}-${today.getMonth()}-${today.getDate()}"]`).getAttribute('aria-pressed'), 'true');
+  await page.getByLabel('Calendar year', { exact: true }).selectOption(String(leapYear));
   await page.emulateMedia({ media: 'print' });
   assert.equal(await page.locator('.mobile-planner').evaluate(element => getComputedStyle(element).display), 'none');
   assert.notEqual(await page.locator('.desktop-calendar').evaluate(element => getComputedStyle(element).display), 'none');

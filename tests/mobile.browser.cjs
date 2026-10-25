@@ -133,9 +133,13 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await editor.waitFor();
   assert.equal(writes, 0, 'Opening a day changed its data');
   assert.ok(await editor.evaluate(dialog => dialog.contains(document.activeElement)), 'Day editor did not receive focus');
+  for (const [name, label] of [['Work (red)', 'Work'], ['Holidays (green)', 'Holidays'], ['Vacation (pink)', 'Vacation'], ['Personal events (blue)', 'Personal events']]) {
+    const option = editor.getByRole('button', { name, exact: true });
+    assert.equal(await option.getByText(label, { exact: true }).isVisible(), true, `Missing visible color label: ${label}`);
+  }
   const note = 'Πλάνο / План 🚵\n' + 'A longer note remains readable on a phone. '.repeat(12);
   await editor.getByLabel('Note', { exact: true }).fill(note);
-  await editor.getByRole('button', { name: 'green', exact: true }).tap();
+  await editor.getByRole('button', { name: 'Holidays (green)', exact: true }).tap();
   await until(() => stored().dateCells['2027-0-2']?.customText === note && stored().dateCells['2027-0-2']?.color === 'green', 'Note and color did not save together');
   await editor.getByRole('button', { name: 'diagonal stripes', exact: true }).tap();
   await until(() => stored().dateCells['2027-0-2']?.texture === 'diagonal-stripes' && !stored().dateCells['2027-0-2']?.color, 'Texture did not replace the color');
@@ -230,6 +234,7 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await page.locator('.calendar-toolbar').waitFor();
   assert.equal(await page.getByRole('button', { name: 'Linear', exact: true }).getAttribute('aria-pressed'), 'true');
   await page.locator('.mobile-planner').waitFor({ state: 'detached' });
+  for (const name of ['Work (red)', 'Holidays (green)', 'Vacation (pink)', 'Personal events (blue)']) assert.equal(await page.getByRole('button', { name, exact: true }).isVisible(), true);
   assert.equal(await page.locator('.mobile-planner').count(), 0);
   assert.deepEqual(errors, []);
 });

@@ -1,6 +1,6 @@
 {
   "name": "year-vas3k-cloud",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "private": true,
   "dependencies": {
     "@types/node": "^16.18.126",

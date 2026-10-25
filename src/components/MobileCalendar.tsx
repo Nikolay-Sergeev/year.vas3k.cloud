@@ -1,7 +1,7 @@
 import { eachDayOfInterval, endOfMonth, format, getDay, isToday, isWeekend, startOfMonth } from "date-fns"
 import React, { useEffect, useRef, useState } from "react"
 import { useCalendar } from "../contexts/CalendarContext"
-import { ALL_COLOR_TEXTURE_CODES, applyColorToDate, COLORS, ColorTextureCode, DateCellData, getDateKey, TEXTURES, UI_COLORS, WEEKEND_COLOR } from "../utils/colors"
+import { ALL_COLOR_TEXTURE_CODES, COLOR_LABELS, getAppearanceLabel, getAppearanceName, applyColorToDate, COLORS, ColorTextureCode, DateCellData, getDateKey, TEXTURES, UI_COLORS, WEEKEND_COLOR } from "../utils/colors"
 import CalendarTitle from "./CalendarTitle"
 import "./MobileCalendar.css"
 
@@ -154,7 +154,7 @@ const MobileCalendar: React.FC = () => {
         </div>
         <div className="mobile-summary-content" aria-live="polite" aria-atomic="true">
           {selectedCell.customText ? <p className="mobile-summary-note">{selectedCell.customText}</p> : <p className="mobile-summary-empty">No plans for this day.</p>}
-          {selectedAppearance && <span className="mobile-summary-appearance"><span aria-hidden="true" style={appearance(selectedCell)} />{selectedAppearance.replace(/-/g, " ")}</span>}
+          {selectedAppearance && <span className="mobile-summary-appearance"><span aria-hidden="true" style={appearance(selectedCell)} />{getAppearanceLabel(selectedAppearance)}</span>}
         </div>
       </section>
     </> : <div className="mobile-agenda">
@@ -162,7 +162,7 @@ const MobileCalendar: React.FC = () => {
         const cell = dateCells.get(getDateKey(day)) || {}
         return <li key={day.getDate()}><button type="button" className="mobile-agenda-item" aria-label={`Edit ${format(day, "EEEE, d MMMM")}`} onClick={() => openEditor(day.getDate())}>
           <time className="mobile-agenda-date" dateTime={format(day, "yyyy-MM-dd")} style={appearance(cell, day)}><span>{day.getDate()}</span><span>{format(day, "EEE")}</span></time>
-          <span className="mobile-agenda-content"><span className="mobile-agenda-heading">{format(day, "d MMMM")}</span><span className="mobile-agenda-note">{cell.customText || (cell.texture ? cell.texture.replace(/-/g, " ") : "Colored day")}</span></span>
+          <span className="mobile-agenda-content"><span className="mobile-agenda-heading">{format(day, "d MMMM")}</span><span className="mobile-agenda-note">{cell.customText || getAppearanceLabel((cell.color || cell.texture)!)}</span></span>
           <svg className="mobile-agenda-chevron" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" /></svg>
         </button></li>
       })}</ul> : <div className="mobile-empty"><p>No plans in {format(first, "MMMM")} yet.</p><button type="button" onClick={() => changeView("Month")}>Choose a date</button></div>}
@@ -172,12 +172,13 @@ const MobileCalendar: React.FC = () => {
       <div className="mobile-editor-header"><h2 id="mobile-editor-heading">{format(selectedDate, "EEEE, d MMMM")}</h2><button type="button" aria-label="Close day editor" onClick={closeEditor}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg></button></div>
       <label htmlFor="mobile-note">Note</label>
       <textarea id="mobile-note" value={selectedCell.customText || ""} rows={3} maxLength={10000} placeholder="Add a note…" onChange={event => setNote(event.target.value)} />
-      <div className="mobile-appearance-label"><span>Color and texture</span><span>{selectedAppearance ? selectedAppearance.replace(/-/g, " ") : "None"}</span></div>
+      <div className="mobile-appearance-label"><span>Color and texture</span><span>{selectedAppearance ? getAppearanceLabel(selectedAppearance) : "None"}</span></div>
       <div className="mobile-appearance-picker" role="group" aria-label="Day color and texture">
-        {ALL_COLOR_TEXTURE_CODES.map(code => <button type="button" className="swatch" key={code} aria-label={code.replace(/-/g, " ")} aria-pressed={selectedAppearance === code} onClick={() => setAppearance(code)}>
+        {ALL_COLOR_TEXTURE_CODES.map(code => <button type="button" className={`swatch${COLOR_LABELS[code] ? " swatch-labeled" : ""}`} key={code} aria-label={getAppearanceName(code)} title={getAppearanceName(code)} aria-pressed={selectedAppearance === code} onClick={() => setAppearance(code)}>
           <span className="swatch-color" aria-hidden="true" style={code in COLORS ? { backgroundColor: COLORS[code as keyof typeof COLORS] } : { backgroundImage: TEXTURES[code as keyof typeof TEXTURES], backgroundSize: "6px 6px" }}>
             {selectedAppearance === code && <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="m3 8 3 3 7-7" /></svg>}
           </span>
+          {COLOR_LABELS[code] && <span className="swatch-label">{COLOR_LABELS[code]}</span>}
         </button>)}
         <button type="button" className="swatch" aria-label="No color or texture" title="No color or texture" aria-pressed={!selectedAppearance} onClick={() => setAppearance(null)}><span className="swatch-color" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4 4 12" /></svg></span></button>
       </div>

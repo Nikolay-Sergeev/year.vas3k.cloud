@@ -23,6 +23,9 @@
 .swatch { display: grid; place-items: center; width: 40px; height: 40px; padding: var(--space-xs); border: 0; background: var(--color-transparent); }
 .swatch-color { width: 24px; height: 24px; display: grid; place-items: center; border-radius: var(--space-2xs); border: 1px solid var(--color-field-edge); }
 .swatch[aria-pressed="true"] .swatch-color { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.swatch-color { flex-shrink: 0; }
+.swatch-label { min-width: 0; white-space: normal; text-align: left; line-height: 1.2; }
+.color-picker .swatch-labeled { display: flex; width: auto; min-height: 44px; height: auto; gap: var(--space-xs); }
 .swatch-texture-start { margin-left: var(--space-xs); }
 .swatch svg { fill: none; stroke: var(--color-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .calendar-scroll-hint { display: none; }
@@ -83,7 +86,10 @@
   .color-picker { width: 100%; gap: var(--space-2xs); }
   .swatch { width: 36px; height: 40px; padding: var(--space-2xs); }
   .swatch::after { inset: -2px -4px; }
-  .swatch-texture-start { margin-left: 0; }
+  .swatch-color { flex-shrink: 0; }
+.swatch-label { min-width: 0; white-space: normal; text-align: left; line-height: 1.2; }
+.color-picker .swatch-labeled { display: flex; width: auto; min-height: 44px; height: auto; gap: var(--space-xs); }
+.swatch-texture-start { margin-left: 0; }
   .calendar-classic { grid-template-columns: minmax(0, 1fr); }
   .calendar-scroll-hint { display: block; margin-top: var(--space-2xs); }
   .calendar-instruction { margin-bottom: var(--space-md); }

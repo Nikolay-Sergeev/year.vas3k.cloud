@@ -19,6 +19,12 @@ export const COLORS: Record<ColorCode, string> = {
   red: "var(--color-day-red)", orange: "var(--color-day-orange)", green: "var(--color-day-green)", blue: "var(--color-day-blue)",
   yellow: "var(--color-day-yellow)", purple: "var(--color-day-purple)", teal: "var(--color-day-teal)", pink: "var(--color-day-pink)",
 }
+export const COLOR_LABELS: Partial<Record<ColorTextureCode, string>> = {
+  red: "Work", green: "Holidays", pink: "Vacation", blue: "Personal events",
+}
+export const getAppearanceLabel = (code: ColorTextureCode): string => COLOR_LABELS[code] || code.replace(/-/g, " ")
+export const getAppearanceName = (code: ColorTextureCode): string => COLOR_LABELS[code] ? `${COLOR_LABELS[code]} (${code})` : getAppearanceLabel(code)
+
 export const WEEKEND_COLOR = "var(--color-weekend)"
 export const UI_COLORS = {
   background: { primary: "var(--color-paper)", secondary: "var(--color-paper-2)", tertiary: "var(--color-paper-2)", quaternary: "var(--color-paper-3)", hover: "var(--color-paper-3)" },
@@ -32,13 +38,13 @@ export const TEXTURES: Record<TextureCode, string> = {
 
 export const ALL_COLOR_TEXTURE_CODES: ColorTextureCode[] = [
   "red",
-  "orange",
   "green",
+  "pink",
   "blue",
+  "orange",
   "yellow",
   "purple",
   "teal",
-  "pink",
   "diagonal-stripes",
   "polka-dots",
   "square-net",

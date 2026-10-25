@@ -9,6 +9,8 @@ interface StoredData {
   selectedView: CalendarView
 }
 interface CalendarContextType {
+  saveStatus: string
+  saveError: boolean
   selectedYear: number
   setSelectedYear: (year: number) => void
   dateCells: Map<string, DateCellData>
@@ -163,6 +165,8 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
   const value: CalendarContextType = {
     ...data,
+    saveStatus: status,
+    saveError: error,
     dateCells: new Map(Object.entries(data.dateCells)),
     setSelectedYear: year => update({ selectedYear: year }),
     setDateCells: cells => update({ dateCells: Object.fromEntries(cells) }),

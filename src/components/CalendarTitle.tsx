@@ -9,7 +9,7 @@ const CalendarTitle: React.FC = () => {
 
   return (
     <h1 className="calendar-title">
-      My plans for{" "}
+      <span className="calendar-title-prefix">My plans for</span>{" "}
       <select aria-label="Calendar year" className="year-select" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))}>
         {yearOptions.map((yearOption) => (
           <option key={yearOption} value={yearOption}>

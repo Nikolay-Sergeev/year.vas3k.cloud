@@ -16,3 +16,5 @@ jobs:
       - run: npm run build
         env:
           GENERATE_SOURCEMAP: 'false'
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

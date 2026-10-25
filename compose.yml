@@ -2,7 +2,7 @@ name: nikolai-calendar
 services:
   calendar:
     build: .
-    image: nikolai-calendar:1.3.0
+    image: nikolai-calendar:1.4.0
     container_name: nikolai-calendar
     restart: unless-stopped
     user: "1000:1000"

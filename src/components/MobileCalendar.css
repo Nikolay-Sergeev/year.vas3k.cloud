@@ -1,0 +1,60 @@
+/* Hallmark · existing Grid system · shape: app screen · mobile month and agenda · v2.0.0 */
+/* Mobile dates select an editor; touch scrolling never paints data. */
+.mobile-planner { display: none; }
+.mobile-planner button { -webkit-tap-highlight-color: var(--color-transparent); }
+.mobile-month-nav { display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs); margin-bottom: var(--space-sm); }
+.mobile-month-nav h2 { flex: 1; min-width: 0; text-align: center; font-size: var(--text-lg); }
+.mobile-month-nav button { display: grid; place-items: center; padding: var(--space-xs); width: 44px; min-height: 44px; }
+.mobile-month-nav svg, .mobile-editor-header svg, .mobile-agenda-chevron { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.mobile-month-select { min-height: 44px; max-width: 100%; padding: var(--space-xs) var(--space-sm); font-size: var(--text-lg); font-family: var(--font-body); font-weight: 500; }
+.mobile-view-selector { display: flex; padding: var(--space-2xs); border-radius: var(--radius-card); background: var(--color-paper-2); }
+.mobile-view-selector button { width: 50%; min-height: 44px; border-color: var(--color-transparent); background: var(--color-transparent); }
+.mobile-view-selector button[aria-pressed="true"] { background: var(--color-ink); color: var(--color-paper); }
+.mobile-view-selector button[aria-pressed="true"]:hover { background: var(--color-ink-2); }
+.mobile-instruction { margin-block: var(--space-sm) var(--space-md); color: var(--color-muted); font-size: var(--text-sm); }
+.mobile-weekdays, .mobile-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-inline: calc(-1 * var(--gutter) + var(--space-2xs)); }
+.mobile-weekdays { padding-bottom: var(--space-xs); text-align: center; font-size: var(--text-xs); color: var(--color-muted); }
+.mobile-month-grid { border-top: 1px solid var(--color-rule); }
+.mobile-day { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: var(--space-2xs); min-width: 0; min-height: 60px; padding: var(--space-xs) 0; border: 0; border-bottom: 1px solid var(--color-rule); border-radius: 0; }
+.mobile-day::after, .mobile-agenda-item::after { display: none; }
+.mobile-day[data-today="true"] { box-shadow: inset 0 0 0 2px var(--color-accent); }
+.mobile-day:focus-visible { outline-offset: -3px; }
+.mobile-day-number { font-size: var(--text-md); font-variant-numeric: tabular-nums; }
+.mobile-note-mark { fill: none; stroke: var(--color-ink-2); stroke-width: 1.2; stroke-linecap: round; }
+.mobile-agenda ul { list-style: none; margin: 0; padding: 0; }
+.mobile-agenda li + li { border-top: 1px solid var(--color-rule); }
+.mobile-agenda-item { display: flex; align-items: center; gap: var(--space-sm); width: 100%; padding: var(--space-md) 0; border: 0; border-radius: 0; text-align: left; white-space: normal; }
+.mobile-agenda-date { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; width: 52px; min-height: 60px; border-radius: var(--radius-input); font-variant-numeric: tabular-nums; }
+.mobile-agenda-date > span:first-child { font-size: var(--text-lg); }
+.mobile-agenda-date > span:last-child { font-size: var(--text-xs); color: var(--color-ink-2); }
+.mobile-agenda-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2xs); }
+.mobile-agenda-heading { font-size: var(--text-xs); color: var(--color-muted); }
+.mobile-agenda-note { font-size: var(--text-md); font-weight: 400; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mobile-agenda-chevron { flex-shrink: 0; color: var(--color-muted); }
+.mobile-empty { padding-block: var(--space-xl); }
+.mobile-empty p { margin-bottom: var(--space-md); color: var(--color-muted); }
+.mobile-day-editor { position: fixed; inset: auto 0 0; margin: 0; width: 100%; max-width: none; max-height: calc(100dvh - var(--space-lg)); padding: var(--space-lg); padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom)); border: 0; border-top: 1px solid var(--color-rule); border-radius: var(--radius-card) var(--radius-card) 0 0; background: var(--color-paper); color: var(--color-ink); overflow-y: auto; overscroll-behavior-y: contain; }
+.mobile-day-editor::backdrop { background: var(--color-modal-backdrop); }
+.mobile-editor-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.mobile-editor-header h2 { font-size: var(--text-xl); }
+.mobile-editor-header button { display: grid; place-items: center; flex-shrink: 0; width: 44px; min-height: 44px; padding: var(--space-xs); }
+.mobile-day-editor label { display: block; margin-bottom: var(--space-xs); font-size: var(--text-sm); font-weight: 500; }
+.mobile-day-editor textarea { display: block; resize: vertical; width: 100%; min-height: 96px; max-height: 35dvh; padding: var(--space-sm); font-size: var(--text-md); line-height: 1.5; }
+.mobile-appearance-label { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-block: var(--space-md) var(--space-xs); font-size: var(--text-sm); }
+.mobile-appearance-label > span:last-child { color: var(--color-muted); }
+.mobile-appearance-picker { display: grid; grid-template-columns: repeat(4, minmax(44px, 1fr)); gap: var(--space-2xs); }
+.mobile-appearance-picker .swatch { width: 100%; height: 44px; padding: var(--space-xs); }
+.mobile-editor-status { min-height: 24px; margin-block: var(--space-sm); color: var(--color-success); font-size: var(--text-sm); }
+.mobile-editor-status-error { color: var(--color-error); }
+.mobile-editor-done { width: 100%; min-height: 44px; }
+@media screen and (max-width: 767px) {
+  .desktop-controls, .desktop-calendar { display: none; }
+  .mobile-planner { display: block; }
+  .calendar-header { flex-direction: row; align-items: center; gap: var(--space-sm); padding-block: var(--space-md); }
+  .calendar-brand { font-size: var(--text-sm); }
+  .calendar-title-prefix { display: none; }
+  .calendar-title { gap: 0; }
+  .year-select { min-height: 44px; }
+  .calendar-data { padding-block: var(--space-xl) var(--space-lg); }
+}
+@media print { .mobile-planner, .mobile-day-editor { display: none !important; } .desktop-calendar { display: block !important; } }

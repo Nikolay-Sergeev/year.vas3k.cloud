@@ -20,8 +20,8 @@ export const COLORS: Record<ColorCode, string> = {
   yellow: "var(--color-day-yellow)", purple: "var(--color-day-purple)", teal: "var(--color-day-teal)", pink: "var(--color-day-pink)",
 }
 export const COLOR_LABELS: Partial<Record<ColorTextureCode, string>> = {
-  red: "Work", green: "Holidays", pink: "Vacation", blue: "Personal events",
-  purple: "Leave / days off", yellow: "Visitors", orange: "Admin / appointments", teal: "Sport / outdoors",
+  red: "Work", green: "Holidays", pink: "Vacation", blue: "Personal",
+  purple: "Days off", yellow: "Visitors", orange: "Appointments", teal: "Sport",
 }
 export const getAppearanceLabel = (code: ColorTextureCode): string => COLOR_LABELS[code] || code.replace(/-/g, " ")
 export const getAppearanceName = (code: ColorTextureCode): string => COLOR_LABELS[code] ? `${COLOR_LABELS[code]} (${code})` : getAppearanceLabel(code)

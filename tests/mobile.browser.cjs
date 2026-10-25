@@ -133,7 +133,7 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await editor.waitFor();
   assert.equal(writes, 0, 'Opening a day changed its data');
   assert.ok(await editor.evaluate(dialog => dialog.contains(document.activeElement)), 'Day editor did not receive focus');
-  for (const [name, label] of [['Work (red)', 'Work'], ['Holidays (green)', 'Holidays'], ['Vacation (pink)', 'Vacation'], ['Personal events (blue)', 'Personal events'], ['Leave / days off (purple)', 'Leave / days off'], ['Visitors (yellow)', 'Visitors'], ['Admin / appointments (orange)', 'Admin / appointments'], ['Sport / outdoors (teal)', 'Sport / outdoors']]) {
+  for (const [name, label] of [['Work (red)', 'Work'], ['Holidays (green)', 'Holidays'], ['Vacation (pink)', 'Vacation'], ['Personal (blue)', 'Personal'], ['Days off (purple)', 'Days off'], ['Visitors (yellow)', 'Visitors'], ['Appointments (orange)', 'Appointments'], ['Sport (teal)', 'Sport']]) {
     const option = editor.getByRole('button', { name, exact: true });
     assert.equal(await option.getByText(label, { exact: true }).isVisible(), true, `Missing visible color label: ${label}`);
   }
@@ -234,7 +234,7 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await page.locator('.calendar-toolbar').waitFor();
   assert.equal(await page.getByRole('button', { name: 'Linear', exact: true }).getAttribute('aria-pressed'), 'true');
   await page.locator('.mobile-planner').waitFor({ state: 'detached' });
-  for (const name of ['Work (red)', 'Holidays (green)', 'Vacation (pink)', 'Personal events (blue)', 'Leave / days off (purple)', 'Visitors (yellow)', 'Admin / appointments (orange)', 'Sport / outdoors (teal)']) assert.equal(await page.getByRole('button', { name, exact: true }).isVisible(), true);
+  for (const name of ['Work (red)', 'Holidays (green)', 'Vacation (pink)', 'Personal (blue)', 'Days off (purple)', 'Visitors (yellow)', 'Appointments (orange)', 'Sport (teal)']) assert.equal(await page.getByRole('button', { name, exact: true }).isVisible(), true);
   assert.equal(await page.locator('.mobile-planner').count(), 0);
   assert.deepEqual(errors, []);
 });

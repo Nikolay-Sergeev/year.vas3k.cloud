@@ -10,6 +10,7 @@ interface DayProps {
   onClick?: () => void
   onMouseDown?: () => void
   onMouseEnter?: () => void
+  onKeyboardPaint?: () => void
   customText?: string
   onCustomTextChange?: (text: string) => void
   customTextOverflow?: "overflow-x" | "overflow-y" | "no-overflow"
@@ -22,6 +23,7 @@ const Day: React.FC<DayProps> = ({
   onClick,
   onMouseDown,
   onMouseEnter,
+  onKeyboardPaint,
   customText = "",
   onCustomTextChange,
   customTextOverflow = "overflow-x",
@@ -40,23 +42,6 @@ const Day: React.FC<DayProps> = ({
 
     const color = COLORS[colorTextureCode as keyof typeof COLORS]
     if (!color) return UI_COLORS.background.primary
-
-    // Apply hover effect for colors
-    if (isHovered) {
-      // Parse OKLCH values and increase lightness slightly for hover
-      const match = color.match(/oklch\(([^)]+)\)/)
-      if (match) {
-        const values = match[1].split(" ")
-        if (values.length >= 3) {
-          const L = parseFloat(values[0])
-          const C = parseFloat(values[1])
-          const H = values[2]
-          const hoverL = Math.min(0.99, L * 1.01)
-          const hoverC = C * 1.02
-          return `oklch(${hoverL.toFixed(3)} ${hoverC.toFixed(3)} ${H})`
-        }
-      }
-    }
 
     return color
   }
@@ -111,6 +96,13 @@ const Day: React.FC<DayProps> = ({
     <div
       className="day"
       data-colored={isColored ? "true" : "false"}
+      data-date={`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}
+      data-today={isToday(date) ? "true" : "false"}
+      role="group"
+      tabIndex={0}
+      aria-label={`${date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}${customText ? `: ${customText}` : ""}`}
+      aria-keyshortcuts="Space"
+      onKeyDown={(event) => { if (event.target === event.currentTarget && event.key === " ") { event.preventDefault(); onKeyboardPaint?.() } }}
       onClick={(e) => {
         if (e.target !== e.currentTarget) {
           return
@@ -131,29 +123,12 @@ const Day: React.FC<DayProps> = ({
         if (onMouseEnter) onMouseEnter()
       }}
       onPointerLeave={() => setIsHovered(false)}
-      style={{
-        padding: "4px",
-        textAlign: "center",
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "14px",
-        fontWeight: "normal",
-        backgroundColor: getBackgroundColor(),
-        position: "relative",
-        cursor: "cell",
-        transition: "background-color 0.2s ease",
-        overflow: "visible",
-        userSelect: "none",
-        border: isToday(date) ? `2px inset ${UI_COLORS.border.inset}` : "none",
-        boxSizing: "border-box",
-        touchAction: "auto",
-        ...getTextureStyles(),
-      }}
+      style={{ backgroundColor: getBackgroundColor(), ...getTextureStyles() }}
     >
-      {hasCustomText ? (
+      {hasCustomText ? <span className="day-number-label" aria-hidden="true">{dayNumber}</span> : (
+        <button type="button" className="day-number" onClick={handleDayNumberClick} aria-label={`Add note for ${date.toLocaleDateString()}`}>{dayNumber}</button>
+      )}
+      {hasCustomText && (
         <CustomText
           text={customText}
           onTextChange={handleCustomTextChange}
@@ -161,34 +136,6 @@ const Day: React.FC<DayProps> = ({
           hoverBackgroundColor={UI_COLORS.background.quaternary}
           overflowDirection={customTextOverflow}
         />
-      ) : (
-        <div
-          onClick={handleDayNumberClick}
-          style={{
-            cursor: onCustomTextChange ? "text" : "default",
-            padding: "2px 4px",
-            borderRadius: "3px",
-            transition: "all 0.2s ease",
-            display: "inline-block",
-            pointerEvents: "auto",
-            fontSize: "inherit",
-            lineHeight: "1",
-          }}
-          onMouseEnter={(e) => {
-            if (onCustomTextChange) {
-              e.currentTarget.style.fontWeight = "bold"
-              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.7)"
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (onCustomTextChange) {
-              e.currentTarget.style.fontWeight = "normal"
-              e.currentTarget.style.backgroundColor = "transparent"
-            }
-          }}
-        >
-          {dayNumber}
-        </div>
       )}
     </div>
   )

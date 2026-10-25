@@ -52,3 +52,9 @@ python3 ops/deploy.py
 OpenWrt has a dedicated `dhcp.nikolai_calendar` domain entry mapping `calendar.nikolai-server.lan` to `192.168.1.201`. No public DNS or WAN forwarding is required.
 
 To roll back the route, restore a saved `backups/<timestamp>/Caddyfile` into `/srv/home-server/caddy/Caddyfile` while preserving its inode, validate, and reload Caddy under the shared lock. Stop only `nikolai-calendar` if needed; retain its data and secrets. To restore data, stop only this calendar service, copy the chosen JSON backup over `data/calendar.json` with UID 1000 and mode `0600`, and restart it. Reload browsers after recovery.
+
+## Interface
+
+The interface uses [Hallmark](https://github.com/nutlope/hallmark)’s Grid theme, adapted to a minimal utilitarian calendar: local Radio Canada fonts, restrained surfaces, muted date colors, and compact controls. Fonts and their Open Font Licenses live in `public/theme/fonts`; rendering makes no request to a font service. Shared tokens style both the calendar and sign-in page.
+
+Date color identifiers and JSON files retain their original meaning. Notes stay inside their day cell; select a note to edit its full contents. Dates remain visible on days with notes. Focus a day and press Space to paint it with the selected color or texture. The calendar supports all three views and printing; wide tables scroll within their own area on phones. Save status and session actions remain at the bottom.

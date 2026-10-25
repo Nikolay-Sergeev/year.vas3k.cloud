@@ -12,9 +12,6 @@ interface CustomTextProps {
 const CustomText: React.FC<CustomTextProps> = ({
   text,
   onTextChange,
-  backgroundColor,
-  hoverBackgroundColor,
-  overflowDirection = "overflow-x",
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(text)
@@ -28,6 +25,7 @@ const CustomText: React.FC<CustomTextProps> = ({
   }
 
   const handleTextEdit = () => {
+    if (!isEditing) return
     const newText = textRef.current?.textContent || ""
     onTextChange(newText)
     setIsEditing(false)
@@ -73,45 +71,6 @@ const CustomText: React.FC<CustomTextProps> = ({
     }
   }, [text, isEditing])
 
-  const getOverflowStyles = (): React.CSSProperties => {
-    switch (overflowDirection) {
-      case "overflow-y":
-        return {
-          whiteSpace: "normal",
-          wordWrap: "break-word",
-          wordBreak: "break-word",
-          position: "absolute",
-          top: "0",
-          left: "0",
-          minWidth: "96%",
-          zIndex: isEditing ? 10 : 1,
-        }
-      case "no-overflow":
-        return {
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          position: "absolute",
-          top: "50%",
-          left: "8px",
-          transform: "translateY(-50%)",
-          minWidth: "100%",
-          zIndex: isEditing ? 10 : 1,
-        }
-      case "overflow-x":
-      default:
-        return {
-          whiteSpace: "nowrap",
-          overflow: "visible",
-          position: "absolute",
-          top: "50%",
-          left: "8px",
-          transform: "translateY(-50%)",
-          zIndex: isEditing ? 10 : 1,
-        }
-    }
-  }
-
   // Don't render anything if text is empty and not editing
   if (text === "" && !isEditing) {
     return null
@@ -120,6 +79,13 @@ const CustomText: React.FC<CustomTextProps> = ({
   return (
     <div
       ref={textRef}
+      className={`custom-text${isEditing ? " is-editing" : ""}`}
+      tabIndex={0}
+      role="textbox"
+      aria-readonly={!isEditing}
+      aria-multiline="true"
+      aria-label={isEditing ? "Edit note" : `Edit note: ${text}`}
+      title={text}
       contentEditable={isEditing}
       suppressContentEditableWarning={true}
       onClick={handleTextClick}
@@ -129,34 +95,13 @@ const CustomText: React.FC<CustomTextProps> = ({
       }}
       onKeyDown={(e) => {
         e.stopPropagation()
-        handleKeyPress(e)
+        if (!isEditing && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault()
+          setIsEditing(true)
+          setEditText(text)
+        } else handleKeyPress(e)
       }}
-      style={{
-        fontSize: "18px",
-        fontWeight: "bold",
-        color: UI_COLORS.text.primary,
-        backgroundColor: backgroundColor,
-        padding: "3px",
-        borderRadius: "2px",
-        cursor: isEditing ? "text" : "pointer",
-        outline: "none",
-        border: isEditing ? `1px solid ${UI_COLORS.button.primary.normal}` : "none",
-        boxShadow: isEditing ? "0 0 5px rgba(0,123,255,0.3)" : "none",
-        minHeight: "20px",
-        ...getOverflowStyles(),
-      }}
-      onMouseEnter={(e) => {
-        e.stopPropagation()
-        if (!isEditing) {
-          e.currentTarget.style.backgroundColor = hoverBackgroundColor
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.stopPropagation()
-        if (!isEditing) {
-          e.currentTarget.style.backgroundColor = backgroundColor
-        }
-      }}
+      style={{ backgroundColor: isEditing ? UI_COLORS.background.primary : "var(--color-transparent)" }}
     >
       {isEditing ? editText : text}
     </div>

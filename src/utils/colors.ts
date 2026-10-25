@@ -16,61 +16,18 @@ export interface DateCellData {
 }
 
 export const COLORS: Record<ColorCode, string> = {
-  red: "oklch(0.7003 0.2051 17.87)",
-  orange: "oklch(0.847 0.2 60)",
-  green: "oklch(0.782 0.1998 151.28)",
-  blue: "oklch(0.847 0.2 240)",
-  yellow: "oklch(0.8751 0.1875 97.28)",
-  purple: "oklch(0.847 0.2 270)",
-  teal: "oklch(0.8205 0.1603 195.75)",
-  pink: "oklch(0.847 0.2 330)",
+  red: "var(--color-day-red)", orange: "var(--color-day-orange)", green: "var(--color-day-green)", blue: "var(--color-day-blue)",
+  yellow: "var(--color-day-yellow)", purple: "var(--color-day-purple)", teal: "var(--color-day-teal)", pink: "var(--color-day-pink)",
 }
-
-export const WEEKEND_COLOR = "oklch(0.95 0.015 240)"
-
+export const WEEKEND_COLOR = "var(--color-weekend)"
 export const UI_COLORS = {
-  background: {
-    primary: "oklch(0.995 0.002 240)",
-    secondary: "oklch(0.97 0.005 240)",
-    tertiary: "oklch(0.985 0.003 240)",
-    quaternary: "oklch(0.94 0.008 240)",
-    hover: "oklch(0.93 0.015 240)",
-  },
-
-  border: {
-    primary: "oklch(0.25 0.02 240)",
-    secondary: "oklch(0.75 0.01 240)",
-    tertiary: "oklch(0.85 0.005 240)",
-    inset: "oklch(0.15 0.03 240)",
-  },
-
-  text: {
-    primary: "oklch(0.25 0.02 240)",
-    secondary: "oklch(0.45 0.015 240)",
-    white: "oklch(0.98 0.005 240)",
-  },
-
-  button: {
-    primary: {
-      normal: "oklch(0.55 0.18 240)",
-      hover: "oklch(0.45 0.2 240)",
-    },
-    success: {
-      normal: "oklch(0.65 0.15 140)",
-      hover: "oklch(0.55 0.17 140)",
-    },
-    danger: {
-      normal: "oklch(0.6 0.2 25)",
-      hover: "oklch(0.5 0.22 25)",
-    },
-  },
+  background: { primary: "var(--color-paper)", secondary: "var(--color-paper-2)", tertiary: "var(--color-paper-2)", quaternary: "var(--color-paper-3)", hover: "var(--color-paper-3)" },
+  border: { primary: "var(--color-rule-strong)", secondary: "var(--color-rule)", tertiary: "var(--color-rule)", inset: "var(--color-accent)" },
+  text: { primary: "var(--color-ink)", secondary: "var(--color-muted)", white: "var(--color-paper)" },
+  button: { primary: { normal: "var(--color-ink)", hover: "var(--color-ink-2)" }, success: { normal: "var(--color-success)", hover: "var(--color-ink)" }, danger: { normal: "var(--color-error)", hover: "var(--color-ink)" } },
 } as const
-
 export const TEXTURES: Record<TextureCode, string> = {
-  "diagonal-stripes":
-    "url(\"data:image/svg+xml,%3Csvg width='6' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='diagonal' patternUnits='userSpaceOnUse' width='6' height='6'%3E%3Cpath d='M 0 0 L 6 6' stroke='%23ccc' stroke-width='1' fill='none'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23diagonal)'/%3E%3C/svg%3E\")",
-  "polka-dots": "radial-gradient(circle at 1.5px 1.5px, #ccc 1.5px, transparent 1.5px)",
-  "square-net": "linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px)",
+  "diagonal-stripes": "var(--texture-diagonal)", "polka-dots": "var(--texture-polka)", "square-net": "var(--texture-net)",
 }
 
 export const ALL_COLOR_TEXTURE_CODES: ColorTextureCode[] = [

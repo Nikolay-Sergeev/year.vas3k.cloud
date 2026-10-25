@@ -84,14 +84,14 @@ const ColumnView: React.FC<ColumnViewProps> = ({ selectedYear, dateCells, setDat
   const maxDays = getMaxDaysInYear()
 
   return (
-    <div
+    <div className="calendar-column" tabIndex={0} aria-label="Year calendar. Scroll horizontally to see all dates."
       style={{
         width: "100%",
         overflowX: "auto",
         WebkitOverflowScrolling: "touch",
       }}
     >
-      <table
+      <table aria-label="Year calendar"
         style={{
           borderCollapse: "collapse",
           width: "100%",
@@ -166,6 +166,7 @@ const ColumnView: React.FC<ColumnViewProps> = ({ selectedYear, dateCells, setDat
                       onMouseDown={() => handleMouseDown(day)}
                       onMouseEnter={() => handleMouseEnter(day)}
                       onCustomTextChange={(text) => handleCustomTextChange(day, text)}
+                      onKeyboardPaint={() => applyColorToDate(day, dateCells, selectedColorTexture, setDateCells)}
                       customText={customText}
                       customTextOverflow="overflow-y"
                     />

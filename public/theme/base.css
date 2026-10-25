@@ -1,0 +1,28 @@
+/* Hallmark · shape: app screen · genre: editorial · theme: Grid · redesign: full · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: E, shared native control states and focus rings */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+html { scrollbar-color: var(--color-rule-strong) var(--color-paper); }
+body { margin: 0; background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-md)/1.5 var(--font-body); font-synthesis: none; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { margin: 0; min-width: 0; overflow-wrap: break-word; font-family: var(--font-display); font-weight: var(--display-weight); letter-spacing: var(--tracking-display); line-height: 1.2; text-wrap: balance; }
+p { margin: 0; max-width: 65ch; text-wrap: pretty; }
+a { color: var(--color-ink-2); text-underline-offset: .2em; text-decoration-thickness: 1px; }
+a:hover { color: var(--color-accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button, select { cursor: pointer; touch-action: manipulation; }
+button { min-height: 40px; padding: var(--space-xs) var(--space-md); border: 1px solid var(--color-field-edge); border-radius: var(--radius-input); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-sm); font-weight: 500; line-height: 1.25; white-space: nowrap; position: relative; }
+button::after { content: ""; position: absolute; inset: -2px 0; }
+button:active { transform: translateY(1px); }
+button:disabled, [aria-disabled="true"] { background: var(--color-paper-2); color: var(--color-muted); opacity: .65; cursor: not-allowed; transform: none; }
+button[aria-busy="true"] { cursor: progress; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+input, select, textarea { border: 1px solid var(--color-field-edge); border-radius: var(--radius-input); background: var(--color-paper); }
+input:focus-visible, select:focus-visible { outline-offset: 2px; }
+button, a { transition: opacity var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
+@media (hover: hover) { button:hover:not(:disabled) { background: var(--color-paper-2); } }
+::selection { background: var(--color-day-blue); color: var(--color-ink); }
+[hidden] { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0; }
+@media (max-width: 60rem) { :root { --gutter: 24px; } }
+@media (max-width: 40rem) { :root { --gutter: 16px; --gap-columns: 16px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

@@ -10,3 +10,5 @@ deployment.json
 
 __pycache__
 *.pyc
+
+.hallmark

@@ -43,7 +43,18 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     if (url.pathname === '/healthz' && req.method === 'GET') {
       validate(JSON.parse(fs.readFileSync(file, 'utf8')));
-      return reply(res, 200, { status: 'ok', version: '1.2.0' });
+      return reply(res, 200, { status: 'ok', version: '1.3.0' });
+    }
+    if (url.pathname.startsWith('/theme/') && ['GET', 'HEAD'].includes(req.method)) {
+      const target = path.resolve(publicDir, '.' + decodeURIComponent(url.pathname));
+      if (!target.startsWith(path.join(publicDir, 'theme') + path.sep)) return reply(res, 404, { error: 'Not found' });
+      let bytes;
+      try { bytes = fs.readFileSync(target); } catch { return reply(res, 404, { error: 'Not found' }); }
+      const type = { '.css': 'text/css', '.ttf': 'font/ttf', '.txt': 'text/plain' }[path.extname(target)];
+      if (!type) return reply(res, 404, { error: 'Not found' });
+      res.writeHead(200, { 'Content-Type': type });
+      res.end(req.method === 'HEAD' ? undefined : bytes);
+      return;
     }
     if (await auth.handle(req, res, url)) return;
     if (!auth.requireAuthentication(req, res)) return;

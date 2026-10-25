@@ -172,14 +172,15 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
   return <CalendarContext.Provider value={value}>
     {ready && children}
-    <footer className="no-print" role="status" aria-live="polite" style={{ padding: "12px 20px", textAlign: "center", background: error ? "#fff0e6" : "#eef6ef", color: "#243b2a" }}>
-      {status}{" "}
+    <footer className={`save-status no-print${error ? " save-status-error" : ""}`} role="status" aria-live="polite">
+      <span className="save-status-label">{status}</span>
+      <div className="save-status-actions">
       {sessionExpired && <button onClick={() => window.location.assign("/login")}>Sign in</button>}{" "}
       {ready && error && !conflict && <button onClick={() => void save()}>Retry save</button>}{" "}
       {ready && (error || conflict) && <button onClick={exportDraft}>Export draft</button>}{" "}
       {(conflict || !ready) && <button onClick={() => { if (!dirty.current || window.confirm("Export your draft first. Reload the server calendar now?")) window.location.reload() }}>Reload server calendar</button>}
       {ready && hasDraft && !dirty.current && <button onClick={restoreDraft}>Restore unsaved draft</button>}
-      {ready && !sessionExpired && <button style={{ marginLeft: "12px" }} onClick={async () => {
+      {ready && !sessionExpired && <button className="sign-out" onClick={async () => {
         if (dirty.current && !window.confirm("Your draft will stay in this browser. Sign out with unsaved changes?")) return
         try {
           const response = await fetch("/api/logout", { method: "POST", credentials: "same-origin", signal: AbortSignal.timeout(15000) })
@@ -187,6 +188,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           window.location.assign("/login")
         } catch { setError(true); setStatus("Could not sign out. Check your connection and try again.") }
       }}>Sign out</button>}
+      </div>
     </footer>
   </CalendarContext.Provider>
 }

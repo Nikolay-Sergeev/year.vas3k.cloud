@@ -1,0 +1,50 @@
+/* Hallmark · shape: app screen · genre: editorial · theme: Grid (deal 3/3) · redesign: full · posture: restrained · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: E, replaced overlapping notes with bounded editable cells */
+:root {
+  color-scheme: light;
+  --font-body: "Radio Canada", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Radio Canada Big", "Radio Canada", ui-sans-serif, system-ui, sans-serif;
+  --color-paper: oklch(99% 0.002 250);
+  --color-paper-2: oklch(97% 0.004 250);
+  --color-paper-3: oklch(94% 0.007 250);
+  --color-ink: oklch(23% 0.018 260);
+  --color-ink-2: oklch(36% 0.018 260);
+  --color-muted: oklch(48% 0.018 260);
+  --color-rule: oklch(88% 0.008 250);
+  --color-rule-strong: oklch(74% 0.012 250);
+  --color-field-edge: oklch(60% 0.015 250);
+  --color-accent: oklch(44% 0.16 260);
+  --color-accent-ink: var(--color-paper);
+  --color-focus: oklch(44% 0.18 260);
+  --color-error: oklch(43% 0.16 28);
+  --color-error-paper: oklch(96% 0.016 28);
+  --color-success: oklch(39% 0.07 155);
+  --color-success-paper: oklch(97% 0.012 155);
+  --color-transparent: transparent;
+  --color-print-paper: oklch(99.8% 0.005 250);
+  --color-print-ink: oklch(18% 0.005 250);
+  --color-day-red: oklch(88% 0.064 22);
+  --color-day-orange: oklch(91% 0.068 64);
+  --color-day-green: oklch(89% 0.055 152);
+  --color-day-blue: oklch(89% 0.048 251);
+  --color-day-yellow: oklch(93% 0.076 96);
+  --color-day-purple: oklch(89% 0.045 300);
+  --color-day-teal: oklch(90% 0.047 193);
+  --color-day-pink: oklch(91% 0.045 350);
+  --color-weekend: oklch(96% 0.008 250);
+  --color-texture: oklch(67% 0.014 250);
+  --texture-diagonal: repeating-linear-gradient(45deg, var(--color-transparent), var(--color-transparent) 4px, var(--color-texture) 4px, var(--color-texture) 5px);
+  --texture-polka: radial-gradient(circle at 2px 2px, var(--color-texture) 1px, var(--color-transparent) 1px);
+  --texture-net: linear-gradient(var(--color-texture) 1px, var(--color-transparent) 1px), linear-gradient(90deg, var(--color-texture) 1px, var(--color-transparent) 1px);
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.125rem; --text-xl: 1.25rem; --text-title: 1.5rem; --text-display: 1.75rem;
+  --container: 1440px; --gutter: 48px; --gap-columns: 24px;
+  --radius-input: 6px; --radius-card: 8px; --radius-pill: 6px;
+  --z-base: 1; --z-raised: 10; --z-sticky: 200; --z-sticky-nav: 300;
+  --dur-micro: 120ms; --dur-short: 200ms; --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --tracking-display: -0.025em; --display-weight: 700;
+}
+@font-face { font-family: "Radio Canada"; font-style: normal; font-weight: 400; font-display: swap; src: url("./fonts/radio-canada-400.ttf") format("truetype"); }
+@font-face { font-family: "Radio Canada"; font-style: normal; font-weight: 500; font-display: swap; src: url("./fonts/radio-canada-500.ttf") format("truetype"); }
+@font-face { font-family: "Radio Canada"; font-style: normal; font-weight: 700; font-display: swap; src: url("./fonts/radio-canada-700.ttf") format("truetype"); }
+@font-face { font-family: "Radio Canada Big"; font-style: normal; font-weight: 700; font-display: swap; src: url("./fonts/radio-canada-big-700.ttf") format("truetype"); }

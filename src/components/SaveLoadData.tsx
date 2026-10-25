@@ -1,6 +1,5 @@
 import React, { useRef } from "react"
 import { useCalendar } from "../contexts/CalendarContext"
-import { UI_COLORS } from "../utils/colors"
 
 const SaveLoadData: React.FC = () => {
   const {
@@ -74,115 +73,20 @@ const SaveLoadData: React.FC = () => {
   }
 
   return (
-    <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "16px",
-          marginTop: "30px",
-          padding: "20px",
-          borderTop: `1px solid ${UI_COLORS.border.tertiary}`,
-        }}
-      >
-        <button
-          onClick={handleSaveData}
-          style={{
-            padding: "12px 20px",
-            fontSize: "14px",
-            fontWeight: "bold",
-            backgroundColor: UI_COLORS.button.primary.normal,
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            transition: "background-color 0.2s ease",
-            touchAction: "auto",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = UI_COLORS.button.primary.hover
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = UI_COLORS.button.primary.normal
-          }}
-        >
-          Export backup…
-        </button>
-
-        <button
-          onClick={handleLoadData}
-          style={{
-            padding: "12px 20px",
-            fontSize: "14px",
-            fontWeight: "bold",
-            backgroundColor: UI_COLORS.button.success.normal,
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            transition: "background-color 0.2s ease",
-            touchAction: "auto",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = UI_COLORS.button.success.hover
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = UI_COLORS.button.success.normal
-          }}
-        >
-          Import calendar
-        </button>
-
-        <button
-          onClick={handleCleanAll}
-          style={{
-            padding: "12px 20px",
-            fontSize: "14px",
-            fontWeight: "bold",
-            backgroundColor: UI_COLORS.button.danger.normal,
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            transition: "background-color 0.2s ease",
-            touchAction: "auto",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = UI_COLORS.button.danger.hover
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = UI_COLORS.button.danger.normal
-          }}
-        >
-          Clean All
-        </button>
-
+    <section className="calendar-data no-print" aria-label="Calendar data">
+      <div className="data-actions">
+        <button className="button-primary" onClick={handleSaveData}>Export backup…</button>
+        <button onClick={handleLoadData}>Import calendar</button>
+        <button className="button-danger" onClick={handleCleanAll}>Clean All</button>
         <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileChange} style={{ display: "none" }} />
       </div>
-
-      <div
-        style={{
-          color: UI_COLORS.text.secondary,
-          textAlign: "center",
-          maxWidth: "800px",
-          margin: "0 auto",
-          padding: "20px",
-        }}
-      >
-        <p style={{ fontSize: "16px" }}>
-          Changes are saved automatically on Nikolai Server. The status at the bottom confirms when your changes are saved.
-        </p>
-        <p style={{ fontSize: "13px", paddingTop: "20px" }}>
-          The server keeps the previous 100 versions. You can also export a JSON backup or import an existing calendar.
-          Import replaces the current calendar; unsaved changes stay in this browser if the connection fails.
-        </p>
-        <p style={{ fontSize: "13px", paddingBottom: "100px" }}>
-          Ideas, bugs and feature requests — <a href="https://github.com/Nikolay-Sergeev/year.vas3k.cloud">on GitHub</a>.
-        </p>
-      </div>
-    </>
+      <details className="data-help">
+        <summary>Saving and backups</summary>
+        <p>Changes save automatically on Nikolai Server. The status below confirms each save.</p>
+        <p>The server keeps the previous 100 versions. Import replaces the current calendar; unsaved changes stay in this browser if the connection fails.</p>
+      </details>
+      <a className="source-link" href="https://github.com/Nikolay-Sergeev/year.vas3k.cloud">Ideas, bugs and feature requests on GitHub</a>
+    </section>
   )
 }
-
 export default SaveLoadData

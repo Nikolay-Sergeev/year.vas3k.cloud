@@ -232,14 +232,14 @@ const LinearView: React.FC<LinearViewProps> = ({ selectedYear, dateCells, setDat
   }
 
   return (
-    <div
+    <div className="calendar-linear" tabIndex={0} aria-label="Year calendar. Scroll horizontally to see all dates."
       style={{
         width: "100%",
         overflowX: "auto",
         WebkitOverflowScrolling: "touch",
       }}
     >
-      <table
+      <table aria-label="Year calendar"
         style={{
           borderCollapse: "collapse",
           width: "100%",
@@ -337,6 +337,7 @@ const LinearView: React.FC<LinearViewProps> = ({ selectedYear, dateCells, setDat
                           onMouseDown={() => handleMouseDown(day)}
                           onMouseEnter={() => handleMouseEnter(day)}
                           onCustomTextChange={(text) => handleCustomTextChange(day, text)}
+                          onKeyboardPaint={() => applyColorToDate(day, dateCells, selectedColorTexture, setDateCells)}
                           customText={customText}
                           customTextOverflow="overflow-x"
                         />

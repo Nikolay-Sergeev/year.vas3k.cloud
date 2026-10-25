@@ -106,7 +106,7 @@ const ClassicView: React.FC<ClassicViewProps> = ({ selectedYear, dateCells, setD
   const months = Array.from({ length: 12 }, (_, i) => i)
 
   return (
-    <div
+    <div className="calendar-classic"
       style={{
         display: "flex",
         flexWrap: "wrap",
@@ -236,6 +236,7 @@ const ClassicView: React.FC<ClassicViewProps> = ({ selectedYear, dateCells, setD
                               onMouseDown={() => handleMouseDown(day)}
                               onMouseEnter={() => handleMouseEnter(day)}
                               onCustomTextChange={(text) => handleCustomTextChange(day, text)}
+                              onKeyboardPaint={() => applyColorToDate(day, dateCells, selectedColorTexture, setDateCells)}
                               customText={customText}
                               customTextOverflow="overflow-x"
                             />

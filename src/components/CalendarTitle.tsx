@@ -8,22 +8,9 @@ const CalendarTitle: React.FC = () => {
   const yearOptions = Array.from(new Set([selectedYear, ...Array.from({ length: 7 }, (_, i) => currentYear - 1 + i)])).sort((a, b) => a - b)
 
   return (
-    <h1 style={{ textAlign: "center", marginBottom: "30px" }}>
+    <h1 className="calendar-title">
       My plans for{" "}
-      <select
-        value={selectedYear}
-        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-        style={{
-          fontSize: "inherit",
-          fontWeight: "inherit",
-          border: "none",
-          background: "transparent",
-          cursor: "pointer",
-          padding: "0",
-          borderRadius: "4px",
-          touchAction: "auto",
-        }}
-      >
+      <select aria-label="Calendar year" className="year-select" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))}>
         {yearOptions.map((yearOption) => (
           <option key={yearOption} value={yearOption}>
             {yearOption}

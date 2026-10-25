@@ -1,0 +1,16 @@
+/* Hallmark · shape: app screen · genre: editorial · theme: Grid · redesign: full · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: E, sign-in controls share the calendar's focus and spacing system */
+html, body { overflow-x: clip; }
+.login-page { min-height: 100dvh; display: grid; place-items: center; padding: var(--space-lg); }
+.login-panel { width: 100%; max-width: 360px; }
+.login-panel h1 { font-size: var(--text-display); margin-bottom: var(--space-xs); }
+.login-panel p { color: var(--color-muted); }
+.login-panel form { margin-top: var(--space-xl); }
+.login-panel label { display: block; font-size: var(--text-sm); font-weight: 500; margin-top: var(--space-lg); margin-bottom: var(--space-xs); }
+.login-panel input { width: 100%; min-height: 44px; padding: var(--space-xs) var(--space-sm); }
+.login-panel input[aria-invalid="true"] { border-color: var(--color-error); }
+.login-panel button { width: 100%; min-height: 44px; margin-top: var(--space-lg); background: var(--color-ink); color: var(--color-paper); }
+.login-panel button:hover:not(:disabled) { background: var(--color-ink-2); }
+.login-panel button:disabled { background: var(--color-paper-3); color: var(--color-muted); cursor: not-allowed; }
+.login-panel #error { color: var(--color-error); min-height: 24px; margin-top: var(--space-sm); font-size: var(--text-sm); }
+.login-panel .remember { font-size: var(--text-sm); margin-top: var(--space-md); }

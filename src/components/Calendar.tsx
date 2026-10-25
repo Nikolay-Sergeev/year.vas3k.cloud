@@ -12,12 +12,18 @@ const Calendar: React.FC = () => {
   const { selectedYear, dateCells, setDateCells, selectedColorTexture, selectedView, setSelectedView } = useCalendar()
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <CalendarTitle />
-      <div className="no-print">
-        <ColorPicker />
+    <main className="calendar-shell">
+      <header className="calendar-header">
+        <span className="calendar-brand">Nikolai Calendar</span>
+        <CalendarTitle />
+      </header>
+      <div className="calendar-toolbar no-print">
         <ViewSelector selectedView={selectedView} onViewChange={setSelectedView} />
+        <ColorPicker />
       </div>
+      <p className="calendar-instruction no-print">Paint a day with a color. Select a date to add a note.
+        {selectedView !== "Classic" && <span className="calendar-scroll-hint">Scroll sideways to see the full calendar.</span>}
+      </p>
 
       {selectedView === "Linear" ? (
         <LinearView
@@ -45,7 +51,7 @@ const Calendar: React.FC = () => {
       <div className="no-print">
         <SaveLoadData />
       </div>
-    </div>
+    </main>
   )
 }
 

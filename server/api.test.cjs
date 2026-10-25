@@ -17,6 +17,8 @@ test('authenticated calendar persists across restart and rejects lost updates an
   const password = crypto.randomBytes(24).toString('base64url');
   fs.mkdirSync(path.join(root, 'public'));
   fs.writeFileSync(path.join(root, 'public', 'index.html'), '<h1>Calendar</h1>');
+  fs.mkdirSync(path.join(root, 'public', 'theme'));
+  fs.writeFileSync(path.join(root, 'public', 'theme', 'tokens.css'), ':root { color-scheme: light; }');
   fs.writeFileSync(path.join(root, 'calendar.json'), JSON.stringify(seed));
   fs.writeFileSync(path.join(root, 'auth.json'), JSON.stringify({username:'nikolai', salt, hash: crypto.scryptSync(password,salt,32).toString('hex')}));
   const probe = net.createServer();
@@ -45,6 +47,8 @@ test('authenticated calendar persists across restart and rejects lost updates an
   await t.test('sign-in form and password protect the calendar without a browser auth prompt',async()=>{
     const page=await fetch(`http://127.0.0.1:${port}/`,{redirect:'manual'});assert.equal(page.status,303);assert.equal(page.headers.get('location'),'/login');
     const form=await fetch(`http://127.0.0.1:${port}/login`);assert.equal(form.status,200);assert.match(await form.text(),/autocomplete="current-password"/);
+    const theme=await fetch(`http://127.0.0.1:${port}/theme/tokens.css`);assert.equal(theme.status,200);assert.equal(theme.headers.get('content-type'),'text/css');
+    const traversal=await fetch(`http://127.0.0.1:${port}/theme/%2e%2e%2f%2e%2e%2fauth.json`);assert.equal(traversal.status,404);
     const denied=await fetch(`http://127.0.0.1:${port}/api/calendar`);assert.equal(denied.status,401);assert.equal(denied.headers.get('www-authenticate'),null);
     assert.equal((await login('nikolai','wrong')).status,401);
     assert.equal((await login('nikolai',password,{Origin:'https://evil.example'})).status,403);

@@ -119,18 +119,14 @@ const MobileCalendar: React.FC = () => {
   return <section className="mobile-planner no-print" aria-label="Mobile calendar">
     <div className="mobile-month-nav">
       <div className="mobile-period">
-        <select className="mobile-month-select" aria-label="Month" value={month} onChange={event => changeMonth(Number(event.target.value))}>
-          {Array.from({ length: 12 }, (_, index) => <option key={index} value={index}>{format(new Date(selectedYear, index, 1), "MMMM")}</option>)}
-        </select>
-        <CalendarTitle />
-      </div>
-      <div className="mobile-month-arrows">
         <button type="button" aria-label="Previous month" disabled={selectedYear === 1900 && month === 0} onClick={() => changeMonth(month - 1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m12 5-5 5 5 5" /></svg></button>
+        <span className="mobile-month" aria-label="Calendar month" aria-live="polite" aria-atomic="true">{format(first, "MMMM")}</span>
         <button type="button" aria-label="Next month" disabled={selectedYear === 2200 && month === 11} onClick={() => changeMonth(month + 1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" /></svg></button>
       </div>
+      <button type="button" className="mobile-today" onClick={goToToday}>Today</button>
     </div>
     <div className="mobile-calendar-tools">
-      <button type="button" className="mobile-today" onClick={goToToday}>Today</button>
+      <CalendarTitle />
       <div className="mobile-view-selector" role="group" aria-label="Phone calendar view">
         {(["Month", "Agenda"] as MobileView[]).map(mode => <button type="button" key={mode} aria-pressed={view === mode} onClick={() => changeView(mode)}>{mode}</button>)}
       </div>

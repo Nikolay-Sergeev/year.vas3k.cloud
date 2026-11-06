@@ -59,7 +59,18 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.locator('.mobile-month-grid').waitFor();
-  await page.getByLabel('Month', { exact: true }).selectOption('0');
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const chooseMonth = async target => {
+    let month = months.indexOf(await page.getByLabel('Calendar month', { exact: true }).textContent());
+    assert.ok(month >= 0, 'Current month is missing');
+    while (month !== target) {
+      const next = month + Math.sign(target - month);
+      await page.getByRole('button', { name: next > month ? 'Next month' : 'Previous month', exact: true }).click();
+      await until(async () => await page.getByLabel('Calendar month', { exact: true }).textContent() === months[next], 'Month arrow did not change the month');
+      month = next;
+    }
+  };
+  await chooseMonth(0);
 
   // Moving backup controls must preserve the downloaded calendar and keep them hidden until requested.
   for (const name of ['Export backup…', 'Import calendar', 'Clean All']) assert.equal(await page.getByRole('button', { name, exact: true }).isVisible(), false);
@@ -91,6 +102,15 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
     const bounds = await page.locator('.mobile-day').evaluateAll(days => days.map(day => { const box = day.getBoundingClientRect(); return { left: box.left, right: box.right, width: box.width, height: box.height }; }));
     assert.equal(bounds.length, 31);
     assert.ok(bounds.every(box => box.width >= 44 && box.height >= 44 && box.left >= 0 && box.right <= width + 1), `Day target or clipping at ${width}px`);
+    for (const name of ['Previous year', 'Next year', 'Previous month', 'Next month']) {
+      const arrow = await page.getByRole('button', { name, exact: true }).boundingBox();
+      assert.ok(arrow.width >= 44 && arrow.height >= 44 && arrow.x >= 0 && arrow.x + arrow.width <= width, `Navigation arrow target or clipping at ${width}px`);
+    }
+    assert.equal(await page.getByRole('combobox', { name: 'Month', exact: true }).count(), 0);
+    const previousMonth = await page.getByRole('button', { name: 'Previous month', exact: true }).boundingBox();
+    const monthLabel = await page.getByLabel('Calendar month', { exact: true }).boundingBox();
+    const nextMonth = await page.getByRole('button', { name: 'Next month', exact: true }).boundingBox();
+    assert.ok(previousMonth.x + previousMonth.width <= monthLabel.x && monthLabel.x + monthLabel.width <= nextMonth.x, 'Month label must sit between its arrows');
     const settingsButton = await page.getByRole('button', { name: 'Settings', exact: true }).boundingBox();
     const signOut = await page.getByRole('button', { name: 'Sign out', exact: true }).boundingBox();
     assert.ok(Math.abs(settingsButton.y - signOut.y) < 1 && signOut.y + signOut.height <= 740, `Settings and Sign out do not fit together at ${width}px`);
@@ -107,17 +127,17 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   assert.equal(await page.locator('.mobile-day[data-date="2027-0-1"]').getAttribute('aria-pressed'), 'true', 'Touch scrolling selected a different day');
   assert.deepEqual(stored(), seed);
 
-  await page.getByLabel('Month', { exact: true }).selectOption('1');
+  await chooseMonth(1);
   assert.equal(await page.locator('.mobile-day').count(), 28);
   await page.getByRole('button', { name: 'Agenda', exact: true }).click();
   await page.getByText('No plans in February yet.', { exact: true }).waitFor();
   await page.reload();
   await page.getByText('No plans in February yet.', { exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Month', { exact: true }).inputValue(), '1');
+  assert.equal(await page.getByLabel('Calendar month', { exact: true }).textContent(), 'February');
   assert.equal(writes, 0, 'Mobile month/view browsing changed server preferences');
   assert.deepEqual(stored(), seed);
   await page.getByRole('button', { name: 'Choose a date', exact: true }).click();
-  await page.getByLabel('Month', { exact: true }).selectOption('0');
+  await chooseMonth(0);
   await page.locator('.mobile-day[data-date="2027-0-1"]').tap();
   const summary = page.getByRole('region', { name: 'Selected day', exact: true });
   await summary.getByText('New Year’s Day', { exact: true }).waitFor();
@@ -169,7 +189,7 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   // Even six-week months leave the selected date and preview on screen together.
   await page.setViewportSize({ width: 320, height: 667 });
   await page.getByRole('button', { name: 'Month', exact: true }).click();
-  await page.getByLabel('Month', { exact: true }).selectOption('4');
+  await chooseMonth(4);
   await page.locator('.mobile-day[data-date="2027-4-31"]').tap();
   await summary.getByRole('heading', { name: 'Monday, 31 May', exact: true }).waitFor();
   const grid = await page.locator('.mobile-month-grid').boundingBox();
@@ -191,20 +211,20 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await page.getByRole('button', { name: 'Previous month' }).click();
   await summary.getByRole('heading', { name: 'Thursday, 1 April', exact: true }).waitFor();
   assert.equal(await page.getByRole('dialog').count(), 0);
-  await page.getByLabel('Month', { exact: true }).selectOption('11');
+  await chooseMonth(11);
   assert.equal(await page.getByRole('button', { name: 'Next month' }).isDisabled(), false, 'December must allow navigation into January');
   assert.equal(writes, writesBeforeBrowsing, 'Date preview navigation wrote to the calendar');
 
   await page.getByRole('button', { name: 'Next month' }).tap();
   await page.getByRole('group', { name: 'January 2028', exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Calendar year', { exact: true }).inputValue(), '2028');
+  assert.equal(await page.getByLabel('Calendar year', { exact: true }).textContent(), '2028');
   assert.equal(await page.locator('.mobile-day[data-date="2028-0-31"]').count(), 1);
   await page.getByRole('button', { name: 'Previous month' }).tap();
   await page.getByRole('group', { name: 'December 2027', exact: true }).waitFor();
-  await page.getByLabel('Month', { exact: true }).selectOption('0');
+  await chooseMonth(0);
   await page.getByRole('button', { name: 'Previous month' }).tap();
   await page.getByRole('group', { name: 'December 2026', exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Calendar year', { exact: true }).inputValue(), '2026');
+  assert.equal(await page.getByLabel('Calendar year', { exact: true }).textContent(), '2026');
   await page.getByRole('button', { name: 'Next month' }).tap();
   await page.getByRole('group', { name: 'January 2027', exact: true }).waitFor();
   await page.locator('.mobile-day[data-date="2027-0-1"]').tap();
@@ -213,18 +233,27 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   assert.deepEqual(stored().dateCells, seed.dateCells, 'Crossing a year boundary changed calendar entries');
 
 
+  const chooseYear = async target => {
+    let year = Number(await page.getByLabel('Calendar year', { exact: true }).textContent());
+    while (year !== target) {
+      const next = year + Math.sign(target - year);
+      await page.getByRole('button', { name: next > year ? 'Next year' : 'Previous year', exact: true }).click();
+      await until(async () => Number(await page.getByLabel('Calendar year', { exact: true }).textContent()) === next, 'Year arrow did not change the year');
+      year = next;
+    }
+  };
   const currentYear = new Date().getFullYear();
   const leapYear = Array.from({ length: 7 }, (_, index) => currentYear - 1 + index).find(year => new Date(year, 1, 29).getMonth() === 1);
-  await page.getByLabel('Calendar year', { exact: true }).selectOption(String(leapYear));
+  await chooseYear(leapYear);
   await page.getByRole('button', { name: 'Month', exact: true }).click();
-  await page.getByLabel('Month', { exact: true }).selectOption('1');
+  await chooseMonth(1);
   assert.equal(await page.locator('.mobile-day').count(), 29, 'Leap-year February is incomplete');
   await page.getByRole('button', { name: 'Today', exact: true }).click();
   const today = new Date();
-  await until(async () => await page.getByLabel('Calendar year', { exact: true }).inputValue() === String(today.getFullYear()), 'Today did not restore the current year');
-  assert.equal(await page.getByLabel('Month', { exact: true }).inputValue(), String(today.getMonth()));
+  await until(async () => await page.getByLabel('Calendar year', { exact: true }).textContent() === String(today.getFullYear()), 'Today did not restore the current year');
+  assert.equal(await page.getByLabel('Calendar month', { exact: true }).textContent(), months[today.getMonth()]);
   assert.equal(await page.locator(`.mobile-day[data-date="${today.getFullYear()}-${today.getMonth()}-${today.getDate()}"]`).getAttribute('aria-pressed'), 'true');
-  await page.getByLabel('Calendar year', { exact: true }).selectOption(String(leapYear));
+  await chooseYear(leapYear);
   await page.emulateMedia({ media: 'print' });
   assert.equal(await page.locator('.mobile-planner').evaluate(element => getComputedStyle(element).display), 'none');
   assert.notEqual(await page.locator('.desktop-calendar').evaluate(element => getComputedStyle(element).display), 'none');
@@ -236,5 +265,11 @@ test('phone planning is touch safe, saves full notes, and keeps browsing prefere
   await page.locator('.mobile-planner').waitFor({ state: 'detached' });
   for (const name of ['Work (red)', 'Holidays (green)', 'Vacation (pink)', 'Personal (blue)', 'Days off (purple)', 'Visitors (yellow)', 'Appointments (orange)', 'Sport (teal)']) assert.equal(await page.getByRole('button', { name, exact: true }).isVisible(), true);
   assert.equal(await page.locator('.mobile-planner').count(), 0);
+  await page.getByRole('button', { name: 'Next year', exact: true }).click();
+  await page.locator(`.desktop-calendar .day[data-date="${leapYear + 1}-0-1"]`).waitFor();
+  await page.getByRole('button', { name: 'Previous year', exact: true }).click();
+  await page.locator(`.desktop-calendar .day[data-date="${leapYear}-0-1"]`).waitFor();
+  await until(async () => stored().selectedYear === leapYear && await page.locator('.save-status-label').innerText() === 'Saved on server', 'Year arrows did not finish saving');
+  assert.deepEqual(stored().dateCells, seed.dateCells, 'Year arrows changed calendar entries');
   assert.deepEqual(errors, []);
 });

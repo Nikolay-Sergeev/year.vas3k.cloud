@@ -123,10 +123,10 @@ const MobileCalendar: React.FC = () => {
         <span className="mobile-month" aria-label="Calendar month" aria-live="polite" aria-atomic="true">{format(first, "MMMM")}</span>
         <button type="button" aria-label="Next month" disabled={selectedYear === 2200 && month === 11} onClick={() => changeMonth(month + 1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5 5 5-5 5" /></svg></button>
       </div>
-      <button type="button" className="mobile-today" onClick={goToToday}>Today</button>
+      <CalendarTitle />
     </div>
     <div className="mobile-calendar-tools">
-      <CalendarTitle />
+      <button type="button" className="mobile-today" onClick={goToToday}>Today</button>
       <div className="mobile-view-selector" role="group" aria-label="Phone calendar view">
         {(["Month", "Agenda"] as MobileView[]).map(mode => <button type="button" key={mode} aria-pressed={view === mode} onClick={() => changeView(mode)}>{mode}</button>)}
       </div>

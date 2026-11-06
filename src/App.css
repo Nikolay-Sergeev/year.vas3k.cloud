@@ -65,7 +65,7 @@
 .settings-header button { display: grid; place-items: center; width: 44px; min-height: 44px; padding: var(--space-xs); }
 .settings-header svg { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
 .settings-toggle, .calendar-settings button { -webkit-tap-highlight-color: var(--color-transparent); }
-.settings-toggle, .sign-out { min-height: 44px; padding-inline: var(--space-xs); }
+.settings-toggle, .sign-out { min-height: 44px; padding-inline: var(--space-xs); border-color: var(--color-transparent); background: var(--color-transparent); color: var(--color-accent); font-size: var(--text-sm); }
 .data-actions { display: grid; gap: var(--space-xs); }
 .data-actions button { min-height: 44px; text-align: left; }
 .button-primary { background: var(--color-ink); color: var(--color-paper); border-color: var(--color-ink); }
@@ -76,7 +76,7 @@
 .data-help summary { min-height: 44px; padding-block: var(--space-sm); cursor: pointer; }
 .data-help p { margin-top: var(--space-sm); max-width: 65ch; }
 .source-link { display: inline-block; margin-top: var(--space-md); font-size: var(--text-xs); }
-.save-status { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); min-height: 72px; padding-block: var(--space-md); border-top: 1px solid var(--color-rule); color: var(--color-success); font-size: var(--text-sm); }
+.save-status { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); min-height: 64px; padding-block: var(--space-xs); padding-bottom: max(var(--space-xs), env(safe-area-inset-bottom)); border-top: 1px solid var(--color-rule); color: var(--color-success); font-size: var(--text-xs); }
 .save-status-label { flex: 1; min-width: 0; }
 .save-status-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); }
 .save-status .sign-out { margin-left: auto; }
